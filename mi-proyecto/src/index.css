@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800;900&family=Epilogue:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-heading: 'Urbanist', sans-serif;
+    --font-body: 'Epilogue', sans-serif;
+
+    --background: 210 20% 97%;
+    --foreground: 213 60% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 213 60% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 213 60% 14%;
+
+    --primary: 198 55% 40%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 45% 25%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 20% 93%;
+    --muted-foreground: 210 15% 45%;
+
+    --accent: 174 42% 55%;
+    --accent-foreground: 213 60% 14%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 198 55% 40%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 213 60% 14%;
+    --sidebar-foreground: 210 20% 93%;
+    --sidebar-primary: 198 55% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 45% 25%;
+    --sidebar-accent-foreground: 210 20% 93%;
+    --sidebar-border: 210 45% 20%;
+    --sidebar-ring: 198 55% 40%;
+
+    /* Custom tokens */
+    --ocean-deep: 213 60% 14%;
+    --ocean-mid: 210 45% 25%;
+    --ocean-bright: 198 55% 40%;
+    --ocean-light: 174 42% 55%;
+    --ocean-surface: 180 30% 94%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(213 60% 14%), hsl(210 45% 25%), hsl(198 55% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(198 55% 40%), hsl(174 42% 55%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 97%));
+
+    --shadow-card: 0 4px 24px -4px hsl(213 60% 14% / 0.08);
+    --shadow-elevated: 0 12px 40px -8px hsl(213 60% 14% / 0.15);
+    --shadow-glow: 0 0 30px -5px hsl(198 55% 40% / 0.25);
+  }
+
+  .dark {
+    --background: 213 60% 8%;
+    --foreground: 210 20% 93%;
+    --card: 213 55% 12%;
+    --card-foreground: 210 20% 93%;
+    --popover: 213 55% 12%;
+    --popover-foreground: 210 20% 93%;
+    --primary: 198 55% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 45% 20%;
+    --secondary-foreground: 210 20% 93%;
+    --muted: 213 40% 16%;
+    --muted-foreground: 210 15% 55%;
+    --accent: 174 42% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 213 40% 18%;
+    --input: 213 40% 18%;
+    --ring: 198 55% 45%;
+    --sidebar-background: 213 60% 8%;
+    --sidebar-foreground: 210 20% 93%;
+    --sidebar-primary: 198 55% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 213 40% 16%;
+    --sidebar-accent-foreground: 210 20% 93%;
+    --sidebar-border: 213 40% 14%;
+    --sidebar-ring: 198 55% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-accent);
+  }
+  .bg-hero {
+    background: var(--gradient-hero);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+}
