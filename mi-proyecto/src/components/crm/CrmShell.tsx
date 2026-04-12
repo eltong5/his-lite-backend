@@ -10,6 +10,7 @@ type CrmShellProps = {
   title: string;
   description: string;
   actionLabel?: string;
+  onAction?: () => void;
   children: ReactNode;
 };
 
@@ -21,7 +22,7 @@ const navItems = [
   { to: "/crm/tareas", label: "Tareas", icon: ListTodo },
 ];
 
-export function CrmShell({ title, description, actionLabel = "Nuevo registro", children }: CrmShellProps) {
+export function CrmShell({ title, description, actionLabel = "Nuevo registro", onAction, children }: CrmShellProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -99,7 +100,7 @@ export function CrmShell({ title, description, actionLabel = "Nuevo registro", c
                 <Bell className="h-4 w-4 text-muted-foreground" />
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent" />
               </button>
-              <Button>{actionLabel}</Button>
+              <Button onClick={onAction}>{actionLabel}</Button>
             </div>
           </div>
         </header>

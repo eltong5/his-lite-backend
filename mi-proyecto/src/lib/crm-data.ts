@@ -1,3 +1,23 @@
+export type LeadStage = "Nuevo lead" | "Cotizacion" | "Negociacion" | "Cierre" | "Postventa";
+
+export type LeadSource = "Landing Page" | "WhatsApp" | "Referido" | "Formulario" | "Llamada" | "Email";
+
+export type LeadAdvisor = "Laura M" | "David P" | "Jorge R" | "Sin asignar";
+
+export type LeadRow = {
+  id: string;
+  name: string;
+  product: string;
+  source: LeadSource;
+  stage: LeadStage;
+  advisor: LeadAdvisor;
+  nextStep: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  createdAt?: string;
+};
+
 export const crmStats = [
   { label: "Leads activos", value: "128", detail: "+14% este mes" },
   { label: "Cotizaciones", value: "34", detail: "12 por cerrar" },
@@ -13,8 +33,9 @@ export const pipelineStages = [
   { id: "postventa", title: "Postventa", count: 11, amount: "$12,000" },
 ];
 
-export const leadRows = [
+export const leadRows: LeadRow[] = [
   {
+    id: "lead-maria-lopez",
     name: "Maria Lopez",
     product: "Seguro Auto",
     source: "Landing Page",
@@ -23,6 +44,7 @@ export const leadRows = [
     nextStep: "Enviar propuesta hoy",
   },
   {
+    id: "lead-carlos-ruiz",
     name: "Carlos Ruiz",
     product: "Seguro Vida",
     source: "WhatsApp",
@@ -31,6 +53,7 @@ export const leadRows = [
     nextStep: "Llamada 4:00 PM",
   },
   {
+    id: "lead-ana-martinez",
     name: "Ana Martinez",
     product: "Seguro Salud",
     source: "Referido",
@@ -39,6 +62,7 @@ export const leadRows = [
     nextStep: "Calificar lead",
   },
   {
+    id: "lead-constructora-delta",
     name: "Constructora Delta",
     product: "Poliza Empresarial",
     source: "Formulario",
