@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
+import { Eye, Pencil, Plus, Search } from "lucide-react";
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { LeadAdvisor, LeadRow, LeadSource, LeadStage, leadRows } from "@/lib/crm-data";
-
-const STORAGE_KEY = "crm-leads";
+import { LeadAdvisor, LeadRow, LeadSource, LeadStage } from "@/lib/crm-data";
+import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
+import { createLead, listLeads, updateLead } from "@/features/leads/leadService";
 
 const stageOptions: LeadStage[] = ["Nuevo lead", "Cotizacion", "Negociacion", "Cierre", "Postventa"];
 const sourceOptions: LeadSource[] = ["Landing Page", "WhatsApp", "Referido", "Formulario", "Llamada", "Email"];
@@ -54,33 +54,19 @@ const defaultFormState: LeadFormState = {
   notes: "",
 };
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phonePattern = /^[+\d\s()-]{7,}$/;
+const leadRepository = new LocalStorageLeadRepository();
+
 const LeadsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<LeadRow | null>(null);
   const [query, setQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [form, setForm] = useState<LeadFormState>(defaultFormState);
   const [errors, setErrors] = useState<Partial<Record<keyof LeadFormState, string>>>({});
-  const [leads, setLeads] = useState<LeadRow[]>(() => {
-    if (typeof window === "undefined") {
-      return leadRows;
-    }
-
-    const storedLeads = window.localStorage.getItem(STORAGE_KEY);
-    if (!storedLeads) {
-      return leadRows;
-    }
-
-    try {
-      const parsedLeads = JSON.parse(storedLeads) as LeadRow[];
-      return parsedLeads.length > 0 ? parsedLeads : leadRows;
-    } catch {
-      return leadRows;
-    }
-  });
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-  }, [leads]);
+  const [leads, setLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
 
   const filteredLeads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -106,17 +92,52 @@ const LeadsPage = () => {
   const resetForm = () => {
     setForm(defaultFormState);
     setErrors({});
+    setEditingLeadId(null);
+  };
+
+  const openCreateDialog = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (lead: LeadRow) => {
+    setEditingLeadId(lead.id);
+    setForm({
+      name: lead.name,
+      product: lead.product,
+      source: lead.source,
+      stage: lead.stage,
+      advisor: lead.advisor,
+      nextStep: lead.nextStep,
+      email: lead.email ?? "",
+      phone: lead.phone ?? "",
+      notes: lead.notes ?? "",
+    });
+    setErrors({});
+    setDialogOpen(true);
+  };
+
+  const openDetailDialog = (lead: LeadRow) => {
+    setSelectedLead(lead);
   };
 
   const validateForm = () => {
     const nextErrors: Partial<Record<keyof LeadFormState, string>> = {};
+    const trimmedEmail = form.email.trim();
+    const trimmedPhone = form.phone.trim();
 
     if (!form.name.trim()) nextErrors.name = "Ingresa el nombre del lead.";
     if (!form.product.trim()) nextErrors.product = "Indica el producto de interes.";
     if (!form.nextStep.trim()) nextErrors.nextStep = "Define el proximo paso comercial.";
-    if (!form.email.trim() && !form.phone.trim()) {
+    if (!trimmedEmail && !trimmedPhone) {
       nextErrors.email = "Agrega email o telefono para poder contactar.";
       nextErrors.phone = "Agrega email o telefono para poder contactar.";
+    }
+    if (trimmedEmail && !emailPattern.test(trimmedEmail)) {
+      nextErrors.email = "Ingresa un email valido.";
+    }
+    if (trimmedPhone && !phonePattern.test(trimmedPhone)) {
+      nextErrors.phone = "Ingresa un telefono valido.";
     }
 
     return nextErrors;
@@ -131,8 +152,7 @@ const LeadsPage = () => {
       return;
     }
 
-    const newLead: LeadRow = {
-      id: `lead-${Date.now()}`,
+    const draft = {
       name: form.name.trim(),
       product: form.product.trim(),
       source: form.source,
@@ -142,10 +162,9 @@ const LeadsPage = () => {
       email: form.email.trim() || undefined,
       phone: form.phone.trim() || undefined,
       notes: form.notes.trim() || undefined,
-      createdAt: new Date().toISOString(),
     };
 
-    setLeads((current) => [newLead, ...current]);
+    setLeads(editingLeadId ? updateLead(leadRepository, editingLeadId, draft) : createLead(leadRepository, draft));
     resetForm();
     setDialogOpen(false);
   };
@@ -155,7 +174,7 @@ const LeadsPage = () => {
       title="Gestion de leads"
       description="Aqui vamos a capturar lo que llegue desde la landing, formularios y WhatsApp. Esta pantalla ya queda lista para conectarse a una fuente real despues."
       actionLabel="Crear lead"
-      onAction={() => setDialogOpen(true)}
+      onAction={openCreateDialog}
     >
       <Dialog
         open={dialogOpen}
@@ -168,16 +187,18 @@ const LeadsPage = () => {
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Nuevo lead</DialogTitle>
+            <DialogTitle>{editingLeadId ? "Editar lead" : "Nuevo lead"}</DialogTitle>
             <DialogDescription>
-              Captura el lead manualmente para probar el flujo comercial del CRM antes de conectarlo a una fuente real.
+              {editingLeadId
+                ? "Actualiza la informacion comercial del lead para mantener el seguimiento al dia."
+                : "Captura el lead manualmente para probar el flujo comercial del CRM antes de conectarlo a una fuente real."}
             </DialogDescription>
           </DialogHeader>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="lead-name">Nombre o empresa</Label>
+                <Label htmlFor="lead-name">Nombre o empresa *</Label>
                 <Input
                   id="lead-name"
                   value={form.name}
@@ -188,7 +209,7 @@ const LeadsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lead-product">Producto</Label>
+                <Label htmlFor="lead-product">Producto *</Label>
                 <Input
                   id="lead-product"
                   value={form.product}
@@ -270,7 +291,7 @@ const LeadsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lead-next-step">Proximo paso</Label>
+                <Label htmlFor="lead-next-step">Proximo paso *</Label>
                 <Input
                   id="lead-next-step"
                   value={form.nextStep}
@@ -291,13 +312,88 @@ const LeadsPage = () => {
               />
             </div>
 
+            <p className="text-sm text-muted-foreground">
+              Los campos con * son minimos para capturar el lead. Debes completar al menos uno entre email o telefono.
+            </p>
+
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">Guardar lead</Button>
+              <Button type="submit">{editingLeadId ? "Guardar cambios" : "Guardar lead"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedLead !== null} onOpenChange={(open) => !open && setSelectedLead(null)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Detalle del lead</DialogTitle>
+            <DialogDescription>
+              Vista resumida para revisar el estado comercial y los datos de contacto del lead.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedLead ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Nombre o empresa</p>
+                <p className="font-medium text-foreground">{selectedLead.name}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Producto</p>
+                <p className="font-medium text-foreground">{selectedLead.product}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Canal</p>
+                <p className="font-medium text-foreground">{selectedLead.source}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Etapa</p>
+                <div>
+                  <Badge>{selectedLead.stage}</Badge>
+                </div>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Asesor</p>
+                <p className="font-medium text-foreground">{selectedLead.advisor}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Proximo paso</p>
+                <p className="font-medium text-foreground">{selectedLead.nextStep}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Email</p>
+                <p className="font-medium text-foreground">{selectedLead.email ?? "No registrado"}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Telefono</p>
+                <p className="font-medium text-foreground">{selectedLead.phone ?? "No registrado"}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4 md:col-span-2">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Notas</p>
+                <p className="font-medium text-foreground">{selectedLead.notes ?? "Sin notas registradas"}</p>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setSelectedLead(null)}>
+              Cerrar
+            </Button>
+            {selectedLead ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setSelectedLead(null);
+                  openEditDialog(selectedLead);
+                }}
+              >
+                Editar lead
+              </Button>
+            ) : null}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -330,7 +426,7 @@ const LeadsPage = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button onClick={openCreateDialog}>
               <Plus className="h-4 w-4" />
               Nuevo lead
             </Button>
@@ -376,6 +472,28 @@ const LeadsPage = () => {
                 <div>
                   <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Proximo paso</p>
                   <p className="mt-1 text-sm text-foreground">{lead.nextStep}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto px-0 text-primary hover:text-primary"
+                      onClick={() => openDetailDialog(lead)}
+                    >
+                      <Eye className="h-4 w-4" />
+                      Ver detalle
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto px-0 text-primary hover:text-primary"
+                      onClick={() => openEditDialog(lead)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))
