@@ -41,3 +41,16 @@ export const updateLead = (repository: LeadRepository, leadId: string, draft: Le
 
   return repository.update(leadId, nextLead);
 };
+
+export const moveLeadToStage = (repository: LeadRepository, leadId: string, stage: LeadRow["stage"]): LeadRow[] => {
+  const currentLead = repository.getById(leadId);
+
+  if (!currentLead) {
+    return repository.list();
+  }
+
+  return repository.update(leadId, {
+    ...currentLead,
+    stage,
+  });
+};

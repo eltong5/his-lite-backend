@@ -1,14 +1,32 @@
 import { ArrowRight, CircleAlert, Clock3, FileText, TrendingUp, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { activityFeed, crmStats, pipelineStages, todayTasks } from "@/lib/crm-data";
+import { LeadRow } from "@/lib/crm-data";
+import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
+import { listLeads } from "@/features/leads/leadService";
+import {
+  buildDashboardStats,
+  buildPipelineHeadline,
+  buildPipelineSummary,
+  buildRecentActivity,
+  buildTodayTasks,
+} from "@/features/dashboard/dashboardService";
 
 const statIcons = [Users, FileText, TrendingUp, CircleAlert];
+const leadRepository = new LocalStorageLeadRepository();
 
 const DashboardPage = () => {
+  const [leads] = useState<LeadRow[]>(() => listLeads(leadRepository));
+  const stats = useMemo(() => buildDashboardStats(leads), [leads]);
+  const pipelineSummary = useMemo(() => buildPipelineSummary(leads), [leads]);
+  const activityFeed = useMemo(() => buildRecentActivity(leads), [leads]);
+  const todayTasks = useMemo(() => buildTodayTasks(leads), [leads]);
+  const pipelineHeadline = useMemo(() => buildPipelineHeadline(leads), [leads]);
+
   return (
     <CrmShell
       title="Dashboard comercial"
@@ -16,7 +34,7 @@ const DashboardPage = () => {
       actionLabel="Nuevo lead"
     >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {crmStats.map((stat, index) => {
+        {stats.map((stat, index) => {
           const Icon = statIcons[index];
 
           return (
@@ -43,22 +61,22 @@ const DashboardPage = () => {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Resumen del pipeline</p>
-              <CardTitle className="mt-1 text-xl">Flujo comercial del MVP</CardTitle>
+              <CardTitle className="mt-1 text-xl">{pipelineHeadline}</CardTitle>
             </div>
             <Button variant="outline">Ver tablero</Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {pipelineStages.map((stage, index) => (
-              <div key={stage.id} className="rounded-2xl border border-border/80 bg-background p-4">
+            {pipelineSummary.map((stage, index) => (
+              <div key={stage.title} className="rounded-2xl border border-border/80 bg-background p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">{stage.title}</p>
-                    <p className="text-sm text-muted-foreground">{stage.count} oportunidades</p>
+                    <p className="text-sm text-muted-foreground">{stage.detail}</p>
                   </div>
-                  <Badge variant={index >= 3 ? "secondary" : "default"}>{stage.amount}</Badge>
+                  <Badge variant={index >= 3 ? "secondary" : "default"}>{stage.count}</Badge>
                 </div>
                 <div className="mt-4 h-2 rounded-full bg-muted">
-                  <div className="h-2 rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${Math.max(stage.count * 4, 20)}%` }} />
+                  <div className="h-2 rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${stage.progress}%` }} />
                 </div>
               </div>
             ))}

@@ -3,9 +3,9 @@
 ## Estado General
 
 - Proyecto: CRM de seguros conectado a landing page
-- Fase actual: Leads funcionales sobre base visual del CRM MVP
-- Avance general estimado: 30%
-- Objetivo actual: consolidar el modulo de leads y preparar una arquitectura limpia para crecer sin acoplarse a una tecnologia especifica de base de datos
+- Fase actual: Leads operativos con pipeline y dashboard conectados a datos reales
+- Avance general estimado: 45%
+- Objetivo actual: consolidar integracion entre leads, pipeline y dashboard para preparar la siguiente conexion con landing page
 
 ## Como medir el avance
 
@@ -75,8 +75,8 @@ Falta:
 
 ### Fase 3. Pipeline funcional
 
-- Estado: Pendiente
-- Avance: 0%
+- Estado: En progreso
+- Avance: 60%
 - Objetivo: mover oportunidades entre etapas reales del negocio
 
 Incluye:
@@ -85,6 +85,19 @@ Incluye:
 - Cambio de etapa
 - Vista tipo tablero
 - Resumen por etapa
+
+Ya hecho:
+
+- Pipeline conectado a leads reales
+- Cambio de etapa desde el tablero
+- Persistencia de movimientos entre etapas
+- Conteo por columna basado en datos reales
+
+Falta:
+
+- Afinar reglas de negocio por etapa
+- Conectar acciones del pipeline con tareas y actividad
+- Mejorar indicadores comerciales por columna
 
 ### Fase 4. Clientes y postventa
 
@@ -323,14 +336,14 @@ Resultado esperado:
 
 ## Proximo Paso Recomendado
 
-Terminar la Fase 2: Leads funcionales y preparar la capa de aplicacion
+Conectar la Fase 3 y Fase 4 con una lectura mas operativa del CRM
 
 Primer entregable recomendado:
 
-- Editar lead
-- Ver detalle del lead
-- Separar datos mock de la logica de gestion
-- Definir contrato inicial para manejar leads sin acoplar el proyecto a una tecnologia de persistencia
+- Vincular tareas con leads segun etapa y proximo paso
+- Mejorar actividad reciente con eventos reales del CRM
+- Empezar a preparar paso de lead a cliente
+- Revisar consistencia entre dashboard, leads y pipeline
 
 ## Regla De Trabajo
 
@@ -377,6 +390,13 @@ Dia o bloque 4:
 - reemplazar indicadores mock principales
 - revisar consistencia entre modulos
 
+Avance real a hoy:
+
+- leads conectados con pipeline
+- pipeline moviendo etapas reales
+- dashboard leyendo datos reales del modulo de leads
+- estructura lista para seguir con tareas, actividad y futura conexion con landing
+
 ## Plan De Hoy
 
 Fecha:
@@ -421,3 +441,5 @@ Checklist de cierre:
 - 2026-04-12: Se definio una vision de arquitectura por capas para evitar acoplar el proyecto a una base de datos especifica.
 - 2026-04-13: Se completo el flujo de leads con edicion, detalle, validacion y persistencia local.
 - 2026-04-13: Se extrajo la logica de leads a una capa reutilizable con contrato inicial de repositorio.
+- 2026-04-13: Se conecto el pipeline con leads reales y se habilito el cambio de etapa desde el tablero.
+- 2026-04-13: Se conecto el dashboard a datos reales del CRM para mostrar metricas, resumen y actividad basada en leads.

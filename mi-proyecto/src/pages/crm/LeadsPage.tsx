@@ -25,8 +25,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { LeadAdvisor, LeadRow, LeadSource, LeadStage } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
 import { createLead, listLeads, updateLead } from "@/features/leads/leadService";
+import { leadStageOptions } from "@/features/leads/leadMetadata";
 
-const stageOptions: LeadStage[] = ["Nuevo lead", "Cotizacion", "Negociacion", "Cierre", "Postventa"];
+const stageOptions: LeadStage[] = leadStageOptions;
 const sourceOptions: LeadSource[] = ["Landing Page", "WhatsApp", "Referido", "Formulario", "Llamada", "Email"];
 const advisorOptions: LeadAdvisor[] = ["Laura M", "David P", "Jorge R", "Sin asignar"];
 
