@@ -4,7 +4,7 @@ import { LeadRepository } from "@/features/leads/leadRepository";
 const STORAGE_KEY = "crm-leads";
 
 export class LocalStorageLeadRepository implements LeadRepository {
-  list(): LeadRow[] {
+  private readLeads(): LeadRow[] {
     if (typeof window === "undefined") {
       return leadRows;
     }
@@ -22,11 +22,31 @@ export class LocalStorageLeadRepository implements LeadRepository {
     }
   }
 
-  saveAll(leads: LeadRow[]): void {
+  private writeLeads(leads: LeadRow[]): void {
     if (typeof window === "undefined") {
       return;
     }
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+  }
+
+  list(): LeadRow[] {
+    return this.readLeads();
+  }
+
+  getById(leadId: string): LeadRow | undefined {
+    return this.readLeads().find((lead) => lead.id === leadId);
+  }
+
+  create(lead: LeadRow): LeadRow[] {
+    const nextLeads = [lead, ...this.readLeads()];
+    this.writeLeads(nextLeads);
+    return nextLeads;
+  }
+
+  update(leadId: string, nextLead: LeadRow): LeadRow[] {
+    const nextLeads = this.readLeads().map((lead) => (lead.id === leadId ? nextLead : lead));
+    this.writeLeads(nextLeads);
+    return nextLeads;
   }
 }

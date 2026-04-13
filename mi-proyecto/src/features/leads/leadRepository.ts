@@ -2,5 +2,7 @@ import { LeadRow } from "@/lib/crm-data";
 
 export interface LeadRepository {
   list(): LeadRow[];
-  saveAll(leads: LeadRow[]): void;
+  getById(leadId: string): LeadRow | undefined;
+  create(lead: LeadRow): LeadRow[];
+  update(leadId: string, lead: LeadRow): LeadRow[];
 }

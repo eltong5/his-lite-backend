@@ -405,13 +405,13 @@ Resultado esperado al cerrar hoy:
 
 Checklist de cierre:
 
-- [ ] formulario revisado
-- [ ] campos minimos definidos
-- [ ] edicion funcionando
-- [ ] detalle funcionando
-- [ ] capa reutilizable creada
-- [ ] contrato inicial definido
-- [ ] flujo validado manualmente
+- [x] formulario revisado
+- [x] campos minimos definidos
+- [x] edicion funcionando
+- [x] detalle funcionando
+- [x] capa reutilizable creada
+- [x] contrato inicial definido
+- [x] flujo validado manualmente
 
 ## Bitacora Rapida
 
@@ -419,3 +419,5 @@ Checklist de cierre:
 - 2026-04-10: Se construyo la base visual del CRM MVP.
 - 2026-04-12: Se implemento el formulario funcional de leads con guardado local y filtros.
 - 2026-04-12: Se definio una vision de arquitectura por capas para evitar acoplar el proyecto a una base de datos especifica.
+- 2026-04-13: Se completo el flujo de leads con edicion, detalle, validacion y persistencia local.
+- 2026-04-13: Se extrajo la logica de leads a una capa reutilizable con contrato inicial de repositorio.

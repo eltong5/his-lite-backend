@@ -14,6 +14,7 @@ const normalizeLeadDraft = (draft: LeadDraft): LeadDraft => ({
 });
 
 export const listLeads = (repository: LeadRepository): LeadRow[] => repository.list();
+export const getLeadById = (repository: LeadRepository, leadId: string): LeadRow | undefined => repository.getById(leadId);
 
 export const createLead = (repository: LeadRepository, draft: LeadDraft): LeadRow[] => {
   const nextLead: LeadRow = {
@@ -22,14 +23,12 @@ export const createLead = (repository: LeadRepository, draft: LeadDraft): LeadRo
     ...normalizeLeadDraft(draft),
   };
 
-  const nextLeads = [nextLead, ...repository.list()];
-  repository.saveAll(nextLeads);
-  return nextLeads;
+  return repository.create(nextLead);
 };
 
 export const updateLead = (repository: LeadRepository, leadId: string, draft: LeadDraft): LeadRow[] => {
   const currentLeads = repository.list();
-  const currentLead = currentLeads.find((lead) => lead.id === leadId);
+  const currentLead = repository.getById(leadId);
 
   if (!currentLead) {
     return currentLeads;
@@ -40,7 +39,5 @@ export const updateLead = (repository: LeadRepository, leadId: string, draft: Le
     ...normalizeLeadDraft(draft),
   };
 
-  const nextLeads = currentLeads.map((lead) => (lead.id === leadId ? nextLead : lead));
-  repository.saveAll(nextLeads);
-  return nextLeads;
+  return repository.update(leadId, nextLead);
 };
