@@ -101,8 +101,8 @@ Falta:
 
 ### Fase 4. Clientes y postventa
 
-- Estado: Pendiente
-- Avance: 0%
+- Estado: En progreso
+- Avance: 35%
 - Objetivo: dar seguimiento a clientes activos y renovaciones
 
 Incluye:
@@ -111,6 +111,20 @@ Incluye:
 - Polizas activas
 - Renovaciones
 - Seguimiento postventa
+
+Ya hecho:
+
+- Base del modulo de tareas conectada a leads reales
+- Tareas derivadas del proximo paso comercial
+- Priorizacion inicial segun etapa del lead
+- Dashboard sincronizado con las tareas del CRM
+
+Falta:
+
+- Convertir lead cerrado en cliente
+- Relacionar tareas con clientes y renovaciones
+- Registrar historial real de seguimiento
+- Preparar automatizaciones por tiempo o evento
 
 ### Fase 5. Conexion con landing page
 
@@ -340,10 +354,10 @@ Conectar la Fase 3 y Fase 4 con una lectura mas operativa del CRM
 
 Primer entregable recomendado:
 
-- Vincular tareas con leads segun etapa y proximo paso
-- Mejorar actividad reciente con eventos reales del CRM
 - Empezar a preparar paso de lead a cliente
-- Revisar consistencia entre dashboard, leads y pipeline
+- Definir estructura minima para clientes reales
+- Relacionar renovaciones y seguimiento postventa
+- Mejorar actividad reciente con eventos mas cercanos al negocio
 
 ## Regla De Trabajo
 
@@ -395,6 +409,7 @@ Avance real a hoy:
 - leads conectados con pipeline
 - pipeline moviendo etapas reales
 - dashboard leyendo datos reales del modulo de leads
+- tareas conectadas con leads reales y proximo paso
 - estructura lista para seguir con tareas, actividad y futura conexion con landing
 
 ## Plan De Hoy
@@ -443,3 +458,4 @@ Checklist de cierre:
 - 2026-04-13: Se extrajo la logica de leads a una capa reutilizable con contrato inicial de repositorio.
 - 2026-04-13: Se conecto el pipeline con leads reales y se habilito el cambio de etapa desde el tablero.
 - 2026-04-13: Se conecto el dashboard a datos reales del CRM para mostrar metricas, resumen y actividad basada en leads.
+- 2026-04-13: Se conecto el modulo de tareas a leads reales y se sincronizo su lectura con el dashboard.

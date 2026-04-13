@@ -1,5 +1,6 @@
 import { LeadRow, LeadStage } from "@/lib/crm-data";
 import { leadStageOptions } from "@/features/leads/leadMetadata";
+import { buildLeadTasks } from "@/features/tasks/taskService";
 
 const stageDescriptions: Record<LeadStage, string> = {
   "Nuevo lead": "Pendientes por calificar",
@@ -42,15 +43,10 @@ export const buildRecentActivity = (leads: LeadRow[]) =>
     .slice(0, 4)
     .map((lead) => ({
       title: `${lead.name} entro al CRM`,
-      detail: `${lead.product} · ${lead.stage}`,
+      detail: `${lead.product} | ${lead.stage}`,
     }));
 
-export const buildTodayTasks = (leads: LeadRow[]) =>
-  leads.slice(0, 4).map((lead, index) => ({
-    title: `${lead.nextStep} - ${lead.name}`,
-    when: `${10 + index}:00`,
-    urgent: lead.stage === "Cierre" || lead.stage === "Negociacion",
-  }));
+export const buildTodayTasks = (leads: LeadRow[]) => buildLeadTasks(leads).slice(0, 4);
 
 export const buildPipelineHeadline = (leads: LeadRow[]) =>
   leads.length > 0 ? `Pipeline activo con ${formatLeadCount(leads.length)}` : "Aun no hay leads en el pipeline";

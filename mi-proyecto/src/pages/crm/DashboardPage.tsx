@@ -94,10 +94,11 @@ const DashboardPage = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               {todayTasks.map((task) => (
-                <div key={task.title} className="rounded-2xl border border-border/80 bg-background p-4">
+                <div key={task.id} className="rounded-2xl border border-border/80 bg-background p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-medium text-foreground">{task.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{task.leadName}</p>
                       <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock3 className="h-4 w-4" />
                         {task.when}
