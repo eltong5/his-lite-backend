@@ -11,6 +11,9 @@ type CrmShellProps = {
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  flowLabel?: string;
+  channelsLabel?: string;
+  statusLabel?: string;
   children: ReactNode;
 };
 
@@ -22,7 +25,16 @@ const navItems = [
   { to: "/crm/tareas", label: "Tareas", icon: ListTodo },
 ];
 
-export function CrmShell({ title, description, actionLabel = "Nuevo registro", onAction, children }: CrmShellProps) {
+export function CrmShell({
+  title,
+  description,
+  actionLabel = "Nuevo registro",
+  onAction,
+  flowLabel = "Operacion comercial conectada",
+  channelsLabel = "CRM, landing y seguimiento",
+  statusLabel = "Demo funcional",
+  children,
+}: CrmShellProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -45,8 +57,8 @@ export function CrmShell({ title, description, actionLabel = "Nuevo registro", o
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4">
           <p className="text-sm font-medium">Estado del proyecto</p>
-          <p className="mt-2 text-sm text-sidebar-foreground/70">Fase 1 activa: diseno del CRM y flujo del MVP.</p>
-          <Badge className="mt-4 bg-accent text-accent-foreground">MVP en construccion</Badge>
+          <p className="mt-2 text-sm text-sidebar-foreground/70">CRM MVP funcional con leads, pipeline y dashboard conectados.</p>
+          <Badge className="mt-4 bg-accent text-accent-foreground">Demo operativa</Badge>
         </div>
 
         <nav className="mt-8 space-y-2">
@@ -73,7 +85,7 @@ export function CrmShell({ title, description, actionLabel = "Nuevo registro", o
 
         <div className="mt-10 rounded-2xl bg-gradient-to-br from-primary/25 to-accent/20 p-4">
           <p className="text-sm font-semibold">Siguiente hito</p>
-          <p className="mt-2 text-sm text-sidebar-foreground/75">Conectar landing, formularios y captura de leads.</p>
+          <p className="mt-2 text-sm text-sidebar-foreground/75">Conectar tareas, actividad real y entrada de leads desde la landing.</p>
           <Button asChild variant="secondary" className="mt-4 w-full">
             <Link to="/">Ver landing</Link>
           </Button>
@@ -115,15 +127,15 @@ export function CrmShell({ title, description, actionLabel = "Nuevo registro", o
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
               <div className="rounded-2xl bg-muted/70 p-4">
                 <p className="text-muted-foreground">Flujo</p>
-                <p className="mt-1 font-semibold">Lead a postventa</p>
+                <p className="mt-1 font-semibold">{flowLabel}</p>
               </div>
               <div className="rounded-2xl bg-muted/70 p-4">
                 <p className="text-muted-foreground">Canales</p>
-                <p className="mt-1 font-semibold">Web, email y WhatsApp</p>
+                <p className="mt-1 font-semibold">{channelsLabel}</p>
               </div>
               <div className="rounded-2xl bg-muted/70 p-4 col-span-2 sm:col-span-1">
                 <p className="text-muted-foreground">Estado</p>
-                <p className="mt-1 font-semibold">Diseno funcional</p>
+                <p className="mt-1 font-semibold">{statusLabel}</p>
               </div>
             </div>
           </div>

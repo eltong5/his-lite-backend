@@ -175,6 +175,9 @@ const LeadsPage = () => {
       title="Gestion de leads"
       description="Aqui vamos a capturar lo que llegue desde la landing, formularios y WhatsApp. Esta pantalla ya queda lista para conectarse a una fuente real despues."
       actionLabel="Crear lead"
+      flowLabel="Captura y seguimiento de leads"
+      channelsLabel="Landing, WhatsApp y referidos"
+      statusLabel="Leads operativos"
       onAction={openCreateDialog}
     >
       <Dialog

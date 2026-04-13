@@ -39,6 +39,9 @@ const PipelinePage = () => {
       title="Pipeline de ventas"
       description="El pipeline del CRM ya queda separado por etapas reales del negocio de seguros. Luego conectamos aqui automatizaciones y cambios de estado."
       actionLabel="Leads conectados"
+      flowLabel="Movimiento real entre etapas"
+      channelsLabel="Leads sincronizados con CRM"
+      statusLabel="Pipeline funcional"
     >
       <section className="grid gap-4 xl:grid-cols-5">
         {pipelineStages.map((stage) => (

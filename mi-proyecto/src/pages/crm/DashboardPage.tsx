@@ -32,6 +32,9 @@ const DashboardPage = () => {
       title="Dashboard comercial"
       description="Este es el centro del CRM. Desde aqui se entiende la operacion diaria, el estado del pipeline y las tareas mas urgentes del equipo."
       actionLabel="Nuevo lead"
+      flowLabel="Vision ejecutiva del embudo"
+      channelsLabel="Resumen del CRM en tiempo real"
+      statusLabel="Dashboard conectado"
     >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, index) => {
