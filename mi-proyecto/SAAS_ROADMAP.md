@@ -255,6 +255,11 @@ Entregables:
 Estado actual estimado:
 
 - 75%
+- Avance real:
+  - leads manuales funcionando
+  - edicion y detalle de lead funcionando
+  - pipeline moviendo etapas reales
+  - dashboard conectado a datos reales
 
 ### Fase 2. Conversion A Cliente
 
@@ -272,6 +277,11 @@ Entregables:
 Estado actual estimado:
 
 - 20%
+- Avance real:
+  - entidad `Client` definida
+  - modulo de clientes conectado a repositorio local
+  - creacion manual de clientes habilitada
+  - conversion automatica de lead a cliente al entrar a `Postventa`
 
 ### Fase 3. Tareas Y Seguimiento Operativo
 
@@ -289,6 +299,10 @@ Entregables:
 Estado actual estimado:
 
 - 20%
+- Avance real:
+  - tareas de postventa creadas automaticamente al convertir cliente
+  - modulo de tareas mostrando seguimiento para leads y clientes
+  - renovaciones proximas visibles desde clientes
 
 ### Fase 4. Ingreso Automatico De Leads
 
@@ -306,6 +320,9 @@ Entregables:
 Estado actual estimado:
 
 - 5%
+- Avance real:
+  - entidad `Lead` ampliada con `city`, `country`, `age`, `campaignName` y `externalLeadId`
+  - formulario de leads listo para capturar datos de marketing e integraciones futuras
 
 ### Fase 5. SaaS Multiagencia
 
@@ -346,6 +363,17 @@ El siguiente paso de producto y codigo debe ser:
 - crear una conversion explicita de lead a cliente
 - guardar clientes en una capa propia
 - relacionar tareas con leads y clientes
+
+## Bitacora De Avance
+
+- 2026-04-15: Se reemplazo el roadmap original por la vision del producto como SaaS CRM para agentes y agencias de seguros.
+- 2026-04-15: Se definio una entidad `Client` mas completa con datos de negocio y contacto.
+- 2026-04-15: Se conecto el modulo de clientes con creacion manual y persistencia local.
+- 2026-04-15: Se implemento la conversion automatica de lead a cliente al mover el pipeline a `Postventa`.
+- 2026-04-15: Se conecto el seguimiento de postventa con tareas automaticas para clientes nuevos.
+- 2026-04-15: Se agrego un bloque operativo de renovaciones proximas en el modulo de clientes.
+- 2026-04-15: Se amplio la entidad `Lead` para soportar datos de captacion como ciudad, pais, edad, campana e identificador externo.
+- 2026-04-15: El siguiente punto pendiente es construir la entrada automatica de leads mediante una capa de ingesta que evite duplicados por `externalLeadId`.
 
 ## Regla De Producto
 

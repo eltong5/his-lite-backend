@@ -14,6 +14,11 @@ export type LeadRow = {
   nextStep: string;
   email?: string;
   phone?: string;
+  city?: string;
+  country?: string;
+  age?: number;
+  campaignName?: string;
+  externalLeadId?: string;
   notes?: string;
   createdAt?: string;
 };
@@ -42,6 +47,11 @@ export const leadRows: LeadRow[] = [
     stage: "Cotizacion",
     advisor: "Laura M",
     nextStep: "Enviar propuesta hoy",
+    city: "Bogota",
+    country: "Colombia",
+    age: 34,
+    campaignName: "Meta Autos Abril",
+    externalLeadId: "meta-1001",
   },
   {
     id: "lead-carlos-ruiz",
@@ -51,6 +61,10 @@ export const leadRows: LeadRow[] = [
     stage: "Negociacion",
     advisor: "David P",
     nextStep: "Llamada 4:00 PM",
+    city: "Medellin",
+    country: "Colombia",
+    age: 41,
+    campaignName: "WhatsApp Referidos",
   },
   {
     id: "lead-ana-martinez",
@@ -60,6 +74,9 @@ export const leadRows: LeadRow[] = [
     stage: "Nuevo lead",
     advisor: "Laura M",
     nextStep: "Calificar lead",
+    city: "Cali",
+    country: "Colombia",
+    age: 29,
   },
   {
     id: "lead-constructora-delta",
@@ -69,6 +86,10 @@ export const leadRows: LeadRow[] = [
     stage: "Cierre",
     advisor: "Jorge R",
     nextStep: "Validar documentos",
+    city: "Barranquilla",
+    country: "Colombia",
+    campaignName: "Formulario Empresas",
+    externalLeadId: "form-empresas-22",
   },
 ];
 

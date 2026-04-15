@@ -38,6 +38,10 @@ export class LocalStorageLeadRepository implements LeadRepository {
     return this.readLeads().find((lead) => lead.id === leadId);
   }
 
+  getByExternalLeadId(externalLeadId: string): LeadRow | undefined {
+    return this.readLeads().find((lead) => lead.externalLeadId === externalLeadId);
+  }
+
   create(lead: LeadRow): LeadRow[] {
     const nextLeads = [lead, ...this.readLeads()];
     this.writeLeads(nextLeads);

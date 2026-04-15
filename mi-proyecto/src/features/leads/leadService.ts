@@ -10,6 +10,11 @@ const normalizeLeadDraft = (draft: LeadDraft): LeadDraft => ({
   nextStep: draft.nextStep.trim(),
   email: draft.email?.trim() || undefined,
   phone: draft.phone?.trim() || undefined,
+  city: draft.city?.trim() || undefined,
+  country: draft.country?.trim() || undefined,
+  age: typeof draft.age === "number" && Number.isFinite(draft.age) ? draft.age : undefined,
+  campaignName: draft.campaignName?.trim() || undefined,
+  externalLeadId: draft.externalLeadId?.trim() || undefined,
   notes: draft.notes?.trim() || undefined,
 });
 

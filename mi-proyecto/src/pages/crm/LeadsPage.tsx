@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ingestLead } from "@/features/leads/leadIngestionService";
 import { LeadAdvisor, LeadRow, LeadSource, LeadStage } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
 import { createLead, listLeads, updateLead } from "@/features/leads/leadService";
@@ -40,6 +41,11 @@ type LeadFormState = {
   nextStep: string;
   email: string;
   phone: string;
+  city: string;
+  country: string;
+  age: string;
+  campaignName: string;
+  externalLeadId: string;
   notes: string;
 };
 
@@ -52,6 +58,11 @@ const defaultFormState: LeadFormState = {
   nextStep: "",
   email: "",
   phone: "",
+  city: "",
+  country: "",
+  age: "",
+  campaignName: "",
+  externalLeadId: "",
   notes: "",
 };
 
@@ -68,6 +79,7 @@ const LeadsPage = () => {
   const [form, setForm] = useState<LeadFormState>(defaultFormState);
   const [errors, setErrors] = useState<Partial<Record<keyof LeadFormState, string>>>({});
   const [leads, setLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
+  const [ingestionMessage, setIngestionMessage] = useState<string | null>(null);
 
   const filteredLeads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -77,6 +89,7 @@ const LeadsPage = () => {
       const matchesQuery =
         normalizedQuery.length === 0 ||
         [lead.name, lead.product, lead.source, lead.advisor, lead.nextStep, lead.email ?? "", lead.phone ?? ""]
+          .concat([lead.city ?? "", lead.country ?? "", lead.campaignName ?? "", lead.externalLeadId ?? ""])
           .join(" ")
           .toLowerCase()
           .includes(normalizedQuery);
@@ -98,6 +111,7 @@ const LeadsPage = () => {
 
   const openCreateDialog = () => {
     resetForm();
+    setIngestionMessage(null);
     setDialogOpen(true);
   };
 
@@ -112,6 +126,11 @@ const LeadsPage = () => {
       nextStep: lead.nextStep,
       email: lead.email ?? "",
       phone: lead.phone ?? "",
+      city: lead.city ?? "",
+      country: lead.country ?? "",
+      age: lead.age ? String(lead.age) : "",
+      campaignName: lead.campaignName ?? "",
+      externalLeadId: lead.externalLeadId ?? "",
       notes: lead.notes ?? "",
     });
     setErrors({});
@@ -130,6 +149,12 @@ const LeadsPage = () => {
     if (!form.name.trim()) nextErrors.name = "Ingresa el nombre del lead.";
     if (!form.product.trim()) nextErrors.product = "Indica el producto de interes.";
     if (!form.nextStep.trim()) nextErrors.nextStep = "Define el proximo paso comercial.";
+    if (form.age.trim()) {
+      const age = Number(form.age);
+      if (!Number.isInteger(age) || age < 18 || age > 99) {
+        nextErrors.age = "Ingresa una edad valida entre 18 y 99.";
+      }
+    }
     if (!trimmedEmail && !trimmedPhone) {
       nextErrors.email = "Agrega email o telefono para poder contactar.";
       nextErrors.phone = "Agrega email o telefono para poder contactar.";
@@ -162,12 +187,41 @@ const LeadsPage = () => {
       nextStep: form.nextStep.trim(),
       email: form.email.trim() || undefined,
       phone: form.phone.trim() || undefined,
+      city: form.city.trim() || undefined,
+      country: form.country.trim() || undefined,
+      age: form.age.trim() ? Number(form.age) : undefined,
+      campaignName: form.campaignName.trim() || undefined,
+      externalLeadId: form.externalLeadId.trim() || undefined,
       notes: form.notes.trim() || undefined,
     };
 
     setLeads(editingLeadId ? updateLead(leadRepository, editingLeadId, draft) : createLead(leadRepository, draft));
+    setIngestionMessage(null);
     resetForm();
     setDialogOpen(false);
+  };
+
+  const handleSimulatedIngestion = () => {
+    const result = ingestLead(leadRepository, {
+      name: "Pepito Perez",
+      phone: "+573001112233",
+      email: "pepito@email.com",
+      city: "Bogota",
+      country: "Colombia",
+      age: 35,
+      product: "Seguro de vida",
+      source: "Formulario",
+      campaignName: "Meta Vida Abril",
+      externalLeadId: "fb-lead-demo-001",
+      notes: "Lead de prueba desde formulario publico.",
+    });
+
+    setLeads(result.leads);
+    setIngestionMessage(
+      result.duplicate
+        ? "La simulacion detecto un lead duplicado por externalLeadId y no lo volvio a crear."
+        : "Se simulo el ingreso automatico y el lead fue creado desde un payload externo.",
+    );
   };
 
   return (
@@ -247,6 +301,38 @@ const LeadsPage = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="lead-city">Ciudad</Label>
+                <Input
+                  id="lead-city"
+                  value={form.city}
+                  onChange={(event) => handleInputChange("city", event.target.value)}
+                  placeholder="Ej. Bogota"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lead-country">Pais</Label>
+                <Input
+                  id="lead-country"
+                  value={form.country}
+                  onChange={(event) => handleInputChange("country", event.target.value)}
+                  placeholder="Ej. Colombia"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lead-age">Edad</Label>
+                <Input
+                  id="lead-age"
+                  inputMode="numeric"
+                  value={form.age}
+                  onChange={(event) => handleInputChange("age", event.target.value)}
+                  placeholder="Ej. 35"
+                />
+                {errors.age ? <p className="text-sm text-destructive">{errors.age}</p> : null}
+              </div>
+
+              <div className="space-y-2">
                 <Label>Canal</Label>
                 <Select value={form.source} onValueChange={(value) => handleInputChange("source", value)}>
                   <SelectTrigger>
@@ -303,6 +389,26 @@ const LeadsPage = () => {
                   placeholder="Ej. Llamar y calificar"
                 />
                 {errors.nextStep ? <p className="text-sm text-destructive">{errors.nextStep}</p> : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lead-campaign">Campana</Label>
+                <Input
+                  id="lead-campaign"
+                  value={form.campaignName}
+                  onChange={(event) => handleInputChange("campaignName", event.target.value)}
+                  placeholder="Ej. Meta Vida Abril"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lead-external-id">Id externo</Label>
+                <Input
+                  id="lead-external-id"
+                  value={form.externalLeadId}
+                  onChange={(event) => handleInputChange("externalLeadId", event.target.value)}
+                  placeholder="Ej. fb-lead-9021"
+                />
               </div>
             </div>
 
@@ -375,6 +481,26 @@ const LeadsPage = () => {
                 <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Telefono</p>
                 <p className="font-medium text-foreground">{selectedLead.phone ?? "No registrado"}</p>
               </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Ciudad</p>
+                <p className="font-medium text-foreground">{selectedLead.city ?? "No registrada"}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Pais</p>
+                <p className="font-medium text-foreground">{selectedLead.country ?? "No registrado"}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Edad</p>
+                <p className="font-medium text-foreground">{selectedLead.age ?? "No registrada"}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Campana</p>
+                <p className="font-medium text-foreground">{selectedLead.campaignName ?? "No registrada"}</p>
+              </div>
+              <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Id externo</p>
+                <p className="font-medium text-foreground">{selectedLead.externalLeadId ?? "No registrado"}</p>
+              </div>
               <div className="space-y-1 rounded-xl border border-border/70 bg-muted/30 p-4 md:col-span-2">
                 <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Notas</p>
                 <p className="font-medium text-foreground">{selectedLead.notes ?? "Sin notas registradas"}</p>
@@ -406,8 +532,12 @@ const LeadsPage = () => {
           <div>
             <p className="text-sm text-muted-foreground">Embudo comercial</p>
             <CardTitle className="mt-1 text-xl">Entrada de oportunidades</CardTitle>
+            {ingestionMessage ? <p className="mt-2 text-sm text-primary">{ingestionMessage}</p> : null}
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <Button type="button" variant="outline" onClick={handleSimulatedIngestion}>
+              Simular ingreso API
+            </Button>
             <div className="relative min-w-[240px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -459,6 +589,11 @@ const LeadsPage = () => {
                   <p className="text-sm text-muted-foreground">{lead.product}</p>
                   {lead.email || lead.phone ? (
                     <p className="mt-1 text-xs text-muted-foreground">{lead.email ?? lead.phone}</p>
+                  ) : null}
+                  {lead.city || lead.country ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {[lead.city, lead.country].filter(Boolean).join(", ")}
+                    </p>
                   ) : null}
                 </div>
                 <div>
