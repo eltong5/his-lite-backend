@@ -1,7 +1,9 @@
-import { Bell, LayoutGrid, ListTodo, Menu, Target, Users, X } from "lucide-react";
+import { Bell, Building2, LayoutGrid, ListTodo, Menu, Target, Users, X } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,7 +25,9 @@ const navItems = [
   { to: "/crm/pipeline", label: "Pipeline", icon: Target },
   { to: "/crm/clientes", label: "Clientes", icon: Users },
   { to: "/crm/tareas", label: "Tareas", icon: ListTodo },
+  { to: "/crm/agencia", label: "Agencia", icon: Building2 },
 ];
+const agencyStore = new LocalStorageAgencyStore();
 
 export function CrmShell({
   title,
@@ -36,6 +40,7 @@ export function CrmShell({
   children,
 }: CrmShellProps) {
   const [open, setOpen] = useState(false);
+  const currentAgency = getCurrentAgency(agencyStore);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_hsl(var(--ocean-surface)),_hsl(var(--background))_45%)]">
@@ -47,8 +52,8 @@ export function CrmShell({
       >
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-sidebar-foreground/50">InsureTech CRM</p>
-            <h1 className="mt-2 font-heading text-2xl font-bold">MVP Seguros</h1>
+            <p className="text-xs uppercase tracking-[0.25em] text-sidebar-foreground/50">{currentAgency.slug}</p>
+            <h1 className="mt-2 font-heading text-2xl font-bold">{currentAgency.name}</h1>
           </div>
           <button className="rounded-full p-2 text-sidebar-foreground/60 hover:bg-sidebar-accent lg:hidden" onClick={() => setOpen(false)}>
             <X className="h-4 w-4" />
@@ -56,9 +61,16 @@ export function CrmShell({
         </div>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="text-sm font-medium">Estado del proyecto</p>
-          <p className="mt-2 text-sm text-sidebar-foreground/70">CRM MVP funcional con leads, pipeline y dashboard conectados.</p>
-          <Badge className="mt-4 bg-accent text-accent-foreground">Demo operativa</Badge>
+          <p className="text-sm font-medium">Agencia actual</p>
+          <p className="mt-2 text-sm text-sidebar-foreground/70">
+            {currentAgency.city}, {currentAgency.country}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Badge className="bg-accent text-accent-foreground">Plan {currentAgency.plan}</Badge>
+            <Badge variant="outline" className="border-white/15 text-sidebar-foreground">
+              {currentAgency.teamSize} asesores
+            </Badge>
+          </div>
         </div>
 
         <nav className="mt-8 space-y-2">
@@ -85,7 +97,7 @@ export function CrmShell({
 
         <div className="mt-10 rounded-2xl bg-gradient-to-br from-primary/25 to-accent/20 p-4">
           <p className="text-sm font-semibold">Siguiente hito</p>
-          <p className="mt-2 text-sm text-sidebar-foreground/75">Conectar tareas, actividad real y entrada de leads desde la landing.</p>
+          <p className="mt-2 text-sm text-sidebar-foreground/75">Consolidar ingreso automatico de leads y preparar cuentas por agencia.</p>
           <Button asChild variant="secondary" className="mt-4 w-full">
             <Link to="/">Ver landing</Link>
           </Button>

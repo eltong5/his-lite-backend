@@ -340,6 +340,9 @@ Entregables:
 Estado actual estimado:
 
 - 0%
+- Avance real:
+  - entidad `Agency` preparada a nivel base
+  - shell del CRM mostrando agencia actual, plan y tamano del equipo
 
 ## Orden Recomendado De Construccion
 
@@ -374,6 +377,7 @@ El siguiente paso de producto y codigo debe ser:
 - 2026-04-15: Se agrego un bloque operativo de renovaciones proximas en el modulo de clientes.
 - 2026-04-15: Se amplio la entidad `Lead` para soportar datos de captacion como ciudad, pais, edad, campana e identificador externo.
 - 2026-04-15: El siguiente punto pendiente es construir la entrada automatica de leads mediante una capa de ingesta que evite duplicados por `externalLeadId`.
+- 2026-04-15: Se agrego una base inicial de `Agency` para empezar a preparar el modo multiagencia del SaaS.
 
 ## Regla De Producto
 

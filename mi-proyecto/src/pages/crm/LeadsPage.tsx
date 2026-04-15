@@ -243,7 +243,7 @@ const LeadsPage = () => {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{editingLeadId ? "Editar lead" : "Nuevo lead"}</DialogTitle>
             <DialogDescription>
@@ -253,180 +253,182 @@ const LeadsPage = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div className="grid gap-4 md:grid-cols-2">
+          <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-2">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="lead-name">Nombre o empresa *</Label>
+                  <Input
+                    id="lead-name"
+                    value={form.name}
+                    onChange={(event) => handleInputChange("name", event.target.value)}
+                    placeholder="Ej. Maria Lopez"
+                  />
+                  {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-product">Producto *</Label>
+                  <Input
+                    id="lead-product"
+                    value={form.product}
+                    onChange={(event) => handleInputChange("product", event.target.value)}
+                    placeholder="Ej. Seguro Auto"
+                  />
+                  {errors.product ? <p className="text-sm text-destructive">{errors.product}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-email">Email</Label>
+                  <Input
+                    id="lead-email"
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => handleInputChange("email", event.target.value)}
+                    placeholder="cliente@correo.com"
+                  />
+                  {errors.email ? <p className="text-sm text-destructive">{errors.email}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-phone">Telefono</Label>
+                  <Input
+                    id="lead-phone"
+                    value={form.phone}
+                    onChange={(event) => handleInputChange("phone", event.target.value)}
+                    placeholder="+57 300 000 0000"
+                  />
+                  {errors.phone ? <p className="text-sm text-destructive">{errors.phone}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-city">Ciudad</Label>
+                  <Input
+                    id="lead-city"
+                    value={form.city}
+                    onChange={(event) => handleInputChange("city", event.target.value)}
+                    placeholder="Ej. Bogota"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-country">Pais</Label>
+                  <Input
+                    id="lead-country"
+                    value={form.country}
+                    onChange={(event) => handleInputChange("country", event.target.value)}
+                    placeholder="Ej. Colombia"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-age">Edad</Label>
+                  <Input
+                    id="lead-age"
+                    inputMode="numeric"
+                    value={form.age}
+                    onChange={(event) => handleInputChange("age", event.target.value)}
+                    placeholder="Ej. 35"
+                  />
+                  {errors.age ? <p className="text-sm text-destructive">{errors.age}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Canal</Label>
+                  <Select value={form.source} onValueChange={(value) => handleInputChange("source", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un canal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sourceOptions.map((source) => (
+                        <SelectItem key={source} value={source}>
+                          {source}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Etapa</Label>
+                  <Select value={form.stage} onValueChange={(value) => handleInputChange("stage", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona la etapa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stageOptions.map((stage) => (
+                        <SelectItem key={stage} value={stage}>
+                          {stage}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Asesor</Label>
+                  <Select value={form.advisor} onValueChange={(value) => handleInputChange("advisor", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el asesor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {advisorOptions.map((advisor) => (
+                        <SelectItem key={advisor} value={advisor}>
+                          {advisor}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-next-step">Proximo paso *</Label>
+                  <Input
+                    id="lead-next-step"
+                    value={form.nextStep}
+                    onChange={(event) => handleInputChange("nextStep", event.target.value)}
+                    placeholder="Ej. Llamar y calificar"
+                  />
+                  {errors.nextStep ? <p className="text-sm text-destructive">{errors.nextStep}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-campaign">Campana</Label>
+                  <Input
+                    id="lead-campaign"
+                    value={form.campaignName}
+                    onChange={(event) => handleInputChange("campaignName", event.target.value)}
+                    placeholder="Ej. Meta Vida Abril"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lead-external-id">Id externo</Label>
+                  <Input
+                    id="lead-external-id"
+                    value={form.externalLeadId}
+                    onChange={(event) => handleInputChange("externalLeadId", event.target.value)}
+                    placeholder="Ej. fb-lead-9021"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="lead-name">Nombre o empresa *</Label>
-                <Input
-                  id="lead-name"
-                  value={form.name}
-                  onChange={(event) => handleInputChange("name", event.target.value)}
-                  placeholder="Ej. Maria Lopez"
+                <Label htmlFor="lead-notes">Notas</Label>
+                <Textarea
+                  id="lead-notes"
+                  value={form.notes}
+                  onChange={(event) => handleInputChange("notes", event.target.value)}
+                  placeholder="Contexto comercial, objeciones o informacion de la solicitud."
                 />
-                {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lead-product">Producto *</Label>
-                <Input
-                  id="lead-product"
-                  value={form.product}
-                  onChange={(event) => handleInputChange("product", event.target.value)}
-                  placeholder="Ej. Seguro Auto"
-                />
-                {errors.product ? <p className="text-sm text-destructive">{errors.product}</p> : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-email">Email</Label>
-                <Input
-                  id="lead-email"
-                  type="email"
-                  value={form.email}
-                  onChange={(event) => handleInputChange("email", event.target.value)}
-                  placeholder="cliente@correo.com"
-                />
-                {errors.email ? <p className="text-sm text-destructive">{errors.email}</p> : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-phone">Telefono</Label>
-                <Input
-                  id="lead-phone"
-                  value={form.phone}
-                  onChange={(event) => handleInputChange("phone", event.target.value)}
-                  placeholder="+57 300 000 0000"
-                />
-                {errors.phone ? <p className="text-sm text-destructive">{errors.phone}</p> : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-city">Ciudad</Label>
-                <Input
-                  id="lead-city"
-                  value={form.city}
-                  onChange={(event) => handleInputChange("city", event.target.value)}
-                  placeholder="Ej. Bogota"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-country">Pais</Label>
-                <Input
-                  id="lead-country"
-                  value={form.country}
-                  onChange={(event) => handleInputChange("country", event.target.value)}
-                  placeholder="Ej. Colombia"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-age">Edad</Label>
-                <Input
-                  id="lead-age"
-                  inputMode="numeric"
-                  value={form.age}
-                  onChange={(event) => handleInputChange("age", event.target.value)}
-                  placeholder="Ej. 35"
-                />
-                {errors.age ? <p className="text-sm text-destructive">{errors.age}</p> : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Canal</Label>
-                <Select value={form.source} onValueChange={(value) => handleInputChange("source", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un canal" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sourceOptions.map((source) => (
-                      <SelectItem key={source} value={source}>
-                        {source}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Etapa</Label>
-                <Select value={form.stage} onValueChange={(value) => handleInputChange("stage", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona la etapa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stageOptions.map((stage) => (
-                      <SelectItem key={stage} value={stage}>
-                        {stage}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Asesor</Label>
-                <Select value={form.advisor} onValueChange={(value) => handleInputChange("advisor", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el asesor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {advisorOptions.map((advisor) => (
-                      <SelectItem key={advisor} value={advisor}>
-                        {advisor}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-next-step">Proximo paso *</Label>
-                <Input
-                  id="lead-next-step"
-                  value={form.nextStep}
-                  onChange={(event) => handleInputChange("nextStep", event.target.value)}
-                  placeholder="Ej. Llamar y calificar"
-                />
-                {errors.nextStep ? <p className="text-sm text-destructive">{errors.nextStep}</p> : null}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-campaign">Campana</Label>
-                <Input
-                  id="lead-campaign"
-                  value={form.campaignName}
-                  onChange={(event) => handleInputChange("campaignName", event.target.value)}
-                  placeholder="Ej. Meta Vida Abril"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="lead-external-id">Id externo</Label>
-                <Input
-                  id="lead-external-id"
-                  value={form.externalLeadId}
-                  onChange={(event) => handleInputChange("externalLeadId", event.target.value)}
-                  placeholder="Ej. fb-lead-9021"
-                />
-              </div>
+              <p className="text-sm text-muted-foreground">
+                Los campos con * son minimos para capturar el lead. Debes completar al menos uno entre email o telefono.
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="lead-notes">Notas</Label>
-              <Textarea
-                id="lead-notes"
-                value={form.notes}
-                onChange={(event) => handleInputChange("notes", event.target.value)}
-                placeholder="Contexto comercial, objeciones o informacion de la solicitud."
-              />
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              Los campos con * son minimos para capturar el lead. Debes completar al menos uno entre email o telefono.
-            </p>
-
-            <DialogFooter>
+            <DialogFooter className="mt-4 border-t border-border/70 pt-4">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
               </Button>

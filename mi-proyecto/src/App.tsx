@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
+import AgencyPage from "./pages/crm/AgencyPage.tsx";
 import ClientsPage from "./pages/crm/ClientsPage.tsx";
 import DashboardPage from "./pages/crm/DashboardPage.tsx";
 import LeadsPage from "./pages/crm/LeadsPage.tsx";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/crm/pipeline" element={<PipelinePage />} />
           <Route path="/crm/clientes" element={<ClientsPage />} />
           <Route path="/crm/tareas" element={<TasksPage />} />
+          <Route path="/crm/agencia" element={<AgencyPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
