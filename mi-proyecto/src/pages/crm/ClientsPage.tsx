@@ -1,20 +1,121 @@
+import { FormEvent, useMemo, useState } from "react";
 import { FileText, ShieldCheck } from "lucide-react";
-import { useMemo, useState } from "react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LeadRow } from "@/lib/crm-data";
-import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
-import { listLeads } from "@/features/leads/leadService";
-import { buildClientHealth, buildClientsFromLeads } from "@/features/clients/clientService";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
+import { ClientStatus } from "@/features/clients/clientModel";
+import { buildClientHealth, createClient, listClients } from "@/features/clients/clientService";
+import { LeadAdvisor } from "@/lib/crm-data";
 
-const leadRepository = new LocalStorageLeadRepository();
+const clientRepository = new LocalStorageClientRepository();
+const advisorOptions: LeadAdvisor[] = ["Laura M", "David P", "Jorge R", "Sin asignar"];
+const statusOptions: ClientStatus[] = ["Al dia", "Seguimiento", "Pendiente"];
+
+type ClientFormState = {
+  fullName: string;
+  product: string;
+  policyNumber: string;
+  renewalDate: string;
+  status: ClientStatus;
+  advisor: LeadAdvisor;
+  email: string;
+  phone: string;
+  city: string;
+  country: string;
+  notes: string;
+};
+
+const defaultFormState: ClientFormState = {
+  fullName: "",
+  product: "",
+  policyNumber: "",
+  renewalDate: "",
+  status: "Al dia",
+  advisor: "Sin asignar",
+  email: "",
+  phone: "",
+  city: "",
+  country: "",
+  notes: "",
+};
 
 const ClientsPage = () => {
-  const [leads] = useState<LeadRow[]>(() => listLeads(leadRepository));
-  const clients = useMemo(() => buildClientsFromLeads(leads), [leads]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<ClientFormState>(defaultFormState);
+  const [errors, setErrors] = useState<Partial<Record<keyof ClientFormState, string>>>({});
+  const [clients, setClients] = useState(() => listClients(clientRepository));
   const clientHealth = useMemo(() => buildClientHealth(clients), [clients]);
+
+  const resetForm = () => {
+    setForm(defaultFormState);
+    setErrors({});
+  };
+
+  const handleInputChange = (field: keyof ClientFormState, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: undefined }));
+  };
+
+  const validateForm = () => {
+    const nextErrors: Partial<Record<keyof ClientFormState, string>> = {};
+
+    if (!form.fullName.trim()) nextErrors.fullName = "Ingresa el nombre del cliente.";
+    if (!form.product.trim()) nextErrors.product = "Indica el producto o poliza.";
+    if (!form.renewalDate.trim()) nextErrors.renewalDate = "Define la fecha de renovacion.";
+
+    return nextErrors;
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setClients(
+      createClient(clientRepository, {
+        fullName: form.fullName,
+        product: form.product,
+        policyNumber: form.policyNumber || undefined,
+        renewalDate: form.renewalDate,
+        status: form.status,
+        advisor: form.advisor,
+        sourceLeadId: "manual-client",
+        email: form.email || undefined,
+        phone: form.phone || undefined,
+        city: form.city || undefined,
+        country: form.country || undefined,
+        notes: form.notes || undefined,
+      }),
+    );
+
+    resetForm();
+    setDialogOpen(false);
+  };
 
   return (
     <CrmShell
@@ -24,7 +125,164 @@ const ClientsPage = () => {
       flowLabel="Conversion de lead a cliente"
       channelsLabel="Postventa y renovaciones"
       statusLabel="Clientes conectados"
+      onAction={() => setDialogOpen(true)}
     >
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            resetForm();
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nuevo cliente</DialogTitle>
+            <DialogDescription>
+              Registra un cliente manualmente para alimentar la cartera activa mientras conectamos la conversion automatica desde leads.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="client-name">Nombre del cliente *</Label>
+                <Input
+                  id="client-name"
+                  value={form.fullName}
+                  onChange={(event) => handleInputChange("fullName", event.target.value)}
+                  placeholder="Ej. Pepito Perez"
+                />
+                {errors.fullName ? <p className="text-sm text-destructive">{errors.fullName}</p> : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-product">Producto o poliza *</Label>
+                <Input
+                  id="client-product"
+                  value={form.product}
+                  onChange={(event) => handleInputChange("product", event.target.value)}
+                  placeholder="Ej. Seguro Vida Familiar"
+                />
+                {errors.product ? <p className="text-sm text-destructive">{errors.product}</p> : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-policy">Numero de poliza</Label>
+                <Input
+                  id="client-policy"
+                  value={form.policyNumber}
+                  onChange={(event) => handleInputChange("policyNumber", event.target.value)}
+                  placeholder="Ej. POL-2026-001"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-renewal">Renovacion *</Label>
+                <Input
+                  id="client-renewal"
+                  type="date"
+                  value={form.renewalDate}
+                  onChange={(event) => handleInputChange("renewalDate", event.target.value)}
+                />
+                {errors.renewalDate ? <p className="text-sm text-destructive">{errors.renewalDate}</p> : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <Select value={form.status} onValueChange={(value) => handleInputChange("status", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Asesor</Label>
+                <Select value={form.advisor} onValueChange={(value) => handleInputChange("advisor", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un asesor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {advisorOptions.map((advisor) => (
+                      <SelectItem key={advisor} value={advisor}>
+                        {advisor}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-email">Email</Label>
+                <Input
+                  id="client-email"
+                  type="email"
+                  value={form.email}
+                  onChange={(event) => handleInputChange("email", event.target.value)}
+                  placeholder="cliente@correo.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-phone">Telefono</Label>
+                <Input
+                  id="client-phone"
+                  value={form.phone}
+                  onChange={(event) => handleInputChange("phone", event.target.value)}
+                  placeholder="+57 300 000 0000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-city">Ciudad</Label>
+                <Input
+                  id="client-city"
+                  value={form.city}
+                  onChange={(event) => handleInputChange("city", event.target.value)}
+                  placeholder="Ej. Bogota"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client-country">Pais</Label>
+                <Input
+                  id="client-country"
+                  value={form.country}
+                  onChange={(event) => handleInputChange("country", event.target.value)}
+                  placeholder="Ej. Colombia"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="client-notes">Notas</Label>
+              <Textarea
+                id="client-notes"
+                value={form.notes}
+                onChange={(event) => handleInputChange("notes", event.target.value)}
+                placeholder="Seguimiento, observaciones o detalles de la poliza."
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Guardar cliente</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
         <Card className="border-0 shadow-card">
           <CardHeader>
@@ -36,12 +294,12 @@ const ClientsPage = () => {
               clients.map((client) => (
                 <div key={client.id} className="grid gap-3 rounded-2xl border border-border/80 bg-background p-4 md:grid-cols-[1fr_1fr_0.8fr_0.8fr] md:items-center">
                   <div>
-                    <p className="font-semibold text-foreground">{client.name}</p>
-                    <p className="text-sm text-muted-foreground">{client.policy}</p>
+                    <p className="font-semibold text-foreground">{client.fullName}</p>
+                    <p className="text-sm text-muted-foreground">{client.product}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Renovacion</p>
-                    <p className="mt-1 text-sm text-foreground">{client.renewal}</p>
+                    <p className="mt-1 text-sm text-foreground">{client.renewalDate}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Estado</p>
@@ -51,7 +309,7 @@ const ClientsPage = () => {
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">Asesor</p>
-                    <p className="mt-1 text-sm text-foreground">{client.owner}</p>
+                    <p className="mt-1 text-sm text-foreground">{client.advisor}</p>
                   </div>
                 </div>
               ))

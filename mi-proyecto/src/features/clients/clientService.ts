@@ -1,41 +1,38 @@
 import { LeadRow } from "@/lib/crm-data";
+import { buildClientFromLead, Client } from "@/features/clients/clientModel";
+import { ClientRepository } from "@/features/clients/clientRepository";
 
-export type ClientRecord = {
-  id: string;
-  name: string;
-  policy: string;
-  renewal: string;
-  status: "Al dia" | "Pendiente" | "Seguimiento";
-  owner: LeadRow["advisor"];
-  sourceLeadId: string;
+export const buildClientsFromLeads = (leads: LeadRow[]): Client[] =>
+  leads.filter((lead) => lead.stage === "Postventa").map(buildClientFromLead);
+
+export type ClientDraft = Omit<Client, "id" | "createdAt">;
+
+const normalizeClientDraft = (draft: ClientDraft): ClientDraft => ({
+  ...draft,
+  fullName: draft.fullName.trim(),
+  product: draft.product.trim(),
+  policyNumber: draft.policyNumber?.trim() || undefined,
+  email: draft.email?.trim() || undefined,
+  phone: draft.phone?.trim() || undefined,
+  city: draft.city?.trim() || undefined,
+  country: draft.country?.trim() || undefined,
+  notes: draft.notes?.trim() || undefined,
+});
+
+export const listClients = (repository: ClientRepository): Client[] => repository.list();
+
+export const createClient = (repository: ClientRepository, draft: ClientDraft): Client[] => {
+  const normalizedDraft = normalizeClientDraft(draft);
+  const nextClient: Client = {
+    id: `client-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    ...normalizedDraft,
+  };
+
+  return repository.create(nextClient);
 };
 
-const buildRenewalDate = (createdAt?: string) => {
-  const baseDate = createdAt ? new Date(createdAt) : new Date();
-  const renewalDate = new Date(baseDate);
-  renewalDate.setMonth(renewalDate.getMonth() + 1);
-
-  return renewalDate.toLocaleDateString("es-CO", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
-
-export const buildClientsFromLeads = (leads: LeadRow[]): ClientRecord[] =>
-  leads
-    .filter((lead) => lead.stage === "Postventa")
-    .map((lead) => ({
-      id: `client-${lead.id}`,
-      name: lead.name,
-      policy: lead.product,
-      renewal: buildRenewalDate(lead.createdAt),
-      status: lead.nextStep ? "Seguimiento" : "Al dia",
-      owner: lead.advisor,
-      sourceLeadId: lead.id,
-    }));
-
-export const buildClientHealth = (clients: ClientRecord[]) => {
+export const buildClientHealth = (clients: Client[]) => {
   const activeClients = clients.filter((client) => client.status === "Al dia").length;
   const followUpClients = clients.filter((client) => client.status === "Seguimiento").length;
 
