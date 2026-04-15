@@ -1,5 +1,5 @@
 import { FormEvent, useMemo, useState } from "react";
-import { FileText, ShieldCheck } from "lucide-react";
+import { CalendarClock, FileText, ShieldCheck } from "lucide-react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
 import { ClientStatus } from "@/features/clients/clientModel";
-import { buildClientHealth, createClient, listClients } from "@/features/clients/clientService";
+import { buildClientHealth, buildUpcomingRenewals, createClient, listClients } from "@/features/clients/clientService";
 import { LeadAdvisor } from "@/lib/crm-data";
 
 const clientRepository = new LocalStorageClientRepository();
@@ -66,6 +66,7 @@ const ClientsPage = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof ClientFormState, string>>>({});
   const [clients, setClients] = useState(() => listClients(clientRepository));
   const clientHealth = useMemo(() => buildClientHealth(clients), [clients]);
+  const upcomingRenewals = useMemo(() => buildUpcomingRenewals(clients), [clients]);
 
   const resetForm = () => {
     setForm(defaultFormState);
@@ -346,6 +347,54 @@ const ClientsPage = () => {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-card">
+            <CardHeader>
+              <p className="text-sm text-muted-foreground">Renovaciones</p>
+              <CardTitle className="mt-1 text-xl">Proximos vencimientos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {upcomingRenewals.length ? (
+                upcomingRenewals.map((renewal) => (
+                  <div key={renewal.id} className="rounded-2xl border border-border/80 bg-background p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-foreground">{renewal.clientName}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{renewal.product}</p>
+                        <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                          <CalendarClock className="h-4 w-4" />
+                          {renewal.renewalDate}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">Asesor: {renewal.advisor}</p>
+                      </div>
+                      <div className="text-right">
+                        <Badge
+                          variant={
+                            renewal.priority === "Alta"
+                              ? "destructive"
+                              : renewal.priority === "Media"
+                                ? "secondary"
+                                : "outline"
+                          }
+                        >
+                          {renewal.priority}
+                        </Badge>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {renewal.daysRemaining <= 0
+                            ? "Vence hoy o ya vencio"
+                            : `${renewal.daysRemaining} dia${renewal.daysRemaining === 1 ? "" : "s"}`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border/80 bg-background p-6 text-sm text-muted-foreground">
+                  Todavia no hay renovaciones visibles en cartera.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

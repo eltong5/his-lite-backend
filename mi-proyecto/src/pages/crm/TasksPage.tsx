@@ -3,11 +3,13 @@ import { useMemo, useState } from "react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadRow } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
 import { listLeads } from "@/features/leads/leadService";
-import { buildLeadTasks } from "@/features/tasks/taskService";
+import { buildLeadTasks, listStoredTasks } from "@/features/tasks/taskWorkflow";
+import { LocalCrmTaskStore } from "@/features/tasks/taskStore";
 
 const automationRules = [
   "Si entra lead desde landing, asignar asesor en menos de 5 minutos.",
@@ -16,6 +18,7 @@ const automationRules = [
 ];
 
 const leadRepository = new LocalStorageLeadRepository();
+const taskStore = new LocalCrmTaskStore();
 
 const channelIcons = {
   WhatsApp: MessageSquareMore,
@@ -26,7 +29,26 @@ const channelIcons = {
 
 const TasksPage = () => {
   const [leads] = useState<LeadRow[]>(() => listLeads(leadRepository));
-  const tasks = useMemo(() => buildLeadTasks(leads), [leads]);
+  const [storedTasks, setStoredTasks] = useState(() => listStoredTasks(taskStore));
+  const derivedLeadTasks = useMemo(() => buildLeadTasks(leads), [leads]);
+  const tasks = useMemo(() => {
+    const taskIds = new Set(storedTasks.map((task) => task.id));
+    const mergedTasks = [...storedTasks, ...derivedLeadTasks.filter((task) => !taskIds.has(task.id))];
+
+    return mergedTasks.sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  }, [derivedLeadTasks, storedTasks]);
+
+  const markTaskAsCompleted = (taskId: string) => {
+    setStoredTasks(taskStore.complete(taskId));
+  };
+
+  const formatTaskWhen = (dueAt: string) =>
+    new Date(dueAt).toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+    });
 
   return (
     <CrmShell
@@ -56,21 +78,36 @@ const TasksPage = () => {
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-foreground">{task.title}</p>
-                        {task.urgent ? <Badge variant="destructive">Urgente</Badge> : <Badge variant="outline">Programada</Badge>}
+                        {task.status === "Completada" ? (
+                          <Badge variant="secondary">Completada</Badge>
+                        ) : task.urgent ? (
+                          <Badge variant="destructive">Urgente</Badge>
+                        ) : (
+                          <Badge variant="outline">Programada</Badge>
+                        )}
                         <Badge variant="secondary">{task.stage}</Badge>
+                        <Badge variant="outline">{task.entityType === "client" ? "Cliente" : "Lead"}</Badge>
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">{task.leadName}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{task.subjectName}</p>
                       <p className="mt-1 text-sm text-muted-foreground">Asesor: {task.advisor}</p>
                       <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-2">
                           <Clock3 className="h-4 w-4" />
-                          Hora objetivo: {task.when}
+                          Hora objetivo: {formatTaskWhen(task.dueAt)}
                         </span>
                         <span className="flex items-center gap-2">
                           <ChannelIcon className="h-4 w-4" />
                           Canal: {task.channel}
                         </span>
                       </div>
+                      {task.notes ? <p className="mt-3 text-sm text-muted-foreground">{task.notes}</p> : null}
+                      {task.status !== "Completada" ? (
+                        <div className="mt-4">
+                          <Button type="button" size="sm" variant="outline" onClick={() => markTaskAsCompleted(task.id)}>
+                            Marcar completada
+                          </Button>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 );

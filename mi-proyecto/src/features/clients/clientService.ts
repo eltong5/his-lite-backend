@@ -42,9 +42,86 @@ export const ensureClientFromLead = (repository: ClientRepository, lead: LeadRow
   return repository.create(buildClientFromLead(lead));
 };
 
+const monthMap: Record<string, number> = {
+  ene: 0,
+  feb: 1,
+  mar: 2,
+  abr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  ago: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dic: 11,
+};
+
+const parseRenewalDate = (value: string): Date | null => {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const isoDate = new Date(normalizedValue);
+  if (!Number.isNaN(isoDate.getTime())) {
+    return isoDate;
+  }
+
+  const match = normalizedValue.toLowerCase().match(/^(\d{1,2})\s+([a-z]{3})\s+(\d{4})$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, day, month, year] = match;
+  const monthIndex = monthMap[month];
+
+  if (monthIndex === undefined) {
+    return null;
+  }
+
+  return new Date(Number(year), monthIndex, Number(day));
+};
+
+const differenceInDays = (renewalDate: Date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const nextRenewal = new Date(renewalDate);
+  nextRenewal.setHours(0, 0, 0, 0);
+
+  return Math.ceil((nextRenewal.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+export const buildUpcomingRenewals = (clients: Client[]) =>
+  clients
+    .map((client) => {
+      const renewalDate = parseRenewalDate(client.renewalDate);
+      const daysRemaining = renewalDate ? differenceInDays(renewalDate) : Number.POSITIVE_INFINITY;
+
+      return {
+        client,
+        daysRemaining,
+      };
+    })
+    .filter((item) => Number.isFinite(item.daysRemaining))
+    .sort((a, b) => a.daysRemaining - b.daysRemaining)
+    .slice(0, 5)
+    .map(({ client, daysRemaining }) => ({
+      id: client.id,
+      clientName: client.fullName,
+      product: client.product,
+      advisor: client.advisor,
+      renewalDate: client.renewalDate,
+      daysRemaining,
+      priority:
+        daysRemaining <= 7 ? "Alta" : daysRemaining <= 30 ? "Media" : "Baja",
+    }));
+
 export const buildClientHealth = (clients: Client[]) => {
   const activeClients = clients.filter((client) => client.status === "Al dia").length;
-  const followUpClients = clients.filter((client) => client.status === "Seguimiento").length;
+  const followUpClients = buildUpcomingRenewals(clients).filter((item) => item.daysRemaining <= 30).length;
 
   return {
     activePercentage: clients.length > 0 ? Math.round((activeClients / clients.length) * 100) : 0,
