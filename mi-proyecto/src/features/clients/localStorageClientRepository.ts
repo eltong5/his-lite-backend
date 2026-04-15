@@ -65,6 +65,10 @@ export class LocalStorageClientRepository implements ClientRepository {
     return this.readClients().find((client) => client.id === clientId);
   }
 
+  getBySourceLeadId(sourceLeadId: string): Client | undefined {
+    return this.readClients().find((client) => client.sourceLeadId === sourceLeadId);
+  }
+
   create(client: Client): Client[] {
     const nextClients = [client, ...this.readClients()];
     this.writeClients(nextClients);

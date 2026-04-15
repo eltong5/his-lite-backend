@@ -4,12 +4,15 @@ import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
+import { ensureClientFromLead } from "@/features/clients/clientService";
 import { LeadRow, pipelineStages } from "@/lib/crm-data";
 import { leadStageIds, leadStageLabelsById } from "@/features/leads/leadMetadata";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
 import { listLeads, moveLeadToStage } from "@/features/leads/leadService";
 
 const leadRepository = new LocalStorageLeadRepository();
+const clientRepository = new LocalStorageClientRepository();
 
 const PipelinePage = () => {
   const [leads, setLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
@@ -31,7 +34,14 @@ const PipelinePage = () => {
     }
 
     const nextStageLabel = leadStageLabelsById[nextStage.id];
-    setLeads(moveLeadToStage(leadRepository, lead.id, nextStageLabel));
+    const nextLeads = moveLeadToStage(leadRepository, lead.id, nextStageLabel);
+    const updatedLead = nextLeads.find((item) => item.id === lead.id);
+
+    if (updatedLead?.stage === "Postventa") {
+      ensureClientFromLead(clientRepository, updatedLead);
+    }
+
+    setLeads(nextLeads);
   };
 
   return (

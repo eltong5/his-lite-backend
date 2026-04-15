@@ -32,6 +32,16 @@ export const createClient = (repository: ClientRepository, draft: ClientDraft): 
   return repository.create(nextClient);
 };
 
+export const ensureClientFromLead = (repository: ClientRepository, lead: LeadRow): Client[] => {
+  const existingClient = repository.getBySourceLeadId(lead.id);
+
+  if (existingClient) {
+    return repository.list();
+  }
+
+  return repository.create(buildClientFromLead(lead));
+};
+
 export const buildClientHealth = (clients: Client[]) => {
   const activeClients = clients.filter((client) => client.status === "Al dia").length;
   const followUpClients = clients.filter((client) => client.status === "Seguimiento").length;
