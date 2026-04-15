@@ -1,5 +1,5 @@
 import { CheckCircle2, Clock3, Mail, MessageSquareMore, Phone, Workflow } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadRow } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
-import { listLeads } from "@/features/leads/leadService";
+import { listLeads, loadLeads } from "@/features/leads/leadService";
 import { buildLeadTasks, listStoredTasks } from "@/features/tasks/taskWorkflow";
 import { LocalCrmTaskStore } from "@/features/tasks/taskStore";
 
@@ -29,8 +29,43 @@ const channelIcons = {
 
 const TasksPage = () => {
   const [leads] = useState<LeadRow[]>(() => listLeads(leadRepository));
+  const [syncedLeads, setSyncedLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
   const [storedTasks, setStoredTasks] = useState(() => listStoredTasks(taskStore));
-  const derivedLeadTasks = useMemo(() => buildLeadTasks(leads), [leads]);
+  useEffect(() => {
+    let active = true;
+
+    const syncLeads = async () => {
+      const nextLeads = await loadLeads(leadRepository);
+      if (active) {
+        setSyncedLeads(nextLeads);
+      }
+    };
+
+    void syncLeads();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const syncTasks = async () => {
+      const nextTasks = await taskStore.syncFromSupabase();
+      if (active) {
+        setStoredTasks(nextTasks);
+      }
+    };
+
+    void syncTasks();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const derivedLeadTasks = useMemo(() => buildLeadTasks(syncedLeads), [syncedLeads]);
   const tasks = useMemo(() => {
     const taskIds = new Set(storedTasks.map((task) => task.id));
     const mergedTasks = [...storedTasks, ...derivedLeadTasks.filter((task) => !taskIds.has(task.id))];
@@ -38,8 +73,9 @@ const TasksPage = () => {
     return mergedTasks.sort((a, b) => a.dueAt.localeCompare(b.dueAt));
   }, [derivedLeadTasks, storedTasks]);
 
-  const markTaskAsCompleted = (taskId: string) => {
-    setStoredTasks(taskStore.complete(taskId));
+  const markTaskAsCompleted = async (taskId: string) => {
+    const nextTasks = await taskStore.completeAsync(taskId);
+    setStoredTasks(nextTasks);
   };
 
   const formatTaskWhen = (dueAt: string) =>
@@ -103,7 +139,7 @@ const TasksPage = () => {
                       {task.notes ? <p className="mt-3 text-sm text-muted-foreground">{task.notes}</p> : null}
                       {task.status !== "Completada" ? (
                         <div className="mt-4">
-                          <Button type="button" size="sm" variant="outline" onClick={() => markTaskAsCompleted(task.id)}>
+                          <Button type="button" size="sm" variant="outline" onClick={() => void markTaskAsCompleted(task.id)}>
                             Marcar completada
                           </Button>
                         </div>

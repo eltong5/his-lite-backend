@@ -106,6 +106,11 @@ export class LocalStorageClientRepository implements ClientRepository {
     return nextClients;
   }
 
+  saveAll(clients: Client[]): Client[] {
+    this.writeClients(clients);
+    return clients;
+  }
+
   update(clientId: string, nextClient: Client): Client[] {
     const nextClients = this.readClients().map((client) => (client.id === clientId ? nextClient : client));
     this.writeClients(nextClients);

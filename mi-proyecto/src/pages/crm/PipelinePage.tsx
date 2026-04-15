@@ -1,17 +1,17 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
-import { ensureClientFromLead } from "@/features/clients/clientService";
-import { ensurePostSaleTask } from "@/features/tasks/taskWorkflow";
+import { ensureClientFromLeadAsync } from "@/features/clients/clientService";
+import { ensurePostSaleTaskAsync } from "@/features/tasks/taskWorkflow";
 import { LocalCrmTaskStore } from "@/features/tasks/taskStore";
 import { LeadRow, pipelineStages } from "@/lib/crm-data";
 import { leadStageIds, leadStageLabelsById } from "@/features/leads/leadMetadata";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
-import { listLeads, moveLeadToStage } from "@/features/leads/leadService";
+import { listLeads, loadLeads, moveLeadToStageAsync } from "@/features/leads/leadService";
 
 const leadRepository = new LocalStorageLeadRepository();
 const clientRepository = new LocalStorageClientRepository();
@@ -20,6 +20,23 @@ const taskStore = new LocalCrmTaskStore();
 const PipelinePage = () => {
   const [leads, setLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
 
+  useEffect(() => {
+    let active = true;
+
+    const syncLeads = async () => {
+      const syncedLeads = await loadLeads(leadRepository);
+      if (active) {
+        setLeads(syncedLeads);
+      }
+    };
+
+    void syncLeads();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const leadsByStage = useMemo(() => {
     return pipelineStages.reduce<Record<string, LeadRow[]>>((accumulator, stage) => {
       accumulator[stage.id] = leads.filter((lead) => leadStageIds[lead.stage] === stage.id);
@@ -27,7 +44,7 @@ const PipelinePage = () => {
     }, {});
   }, [leads]);
 
-  const moveLead = (lead: LeadRow, direction: "backward" | "forward") => {
+  const moveLead = async (lead: LeadRow, direction: "backward" | "forward") => {
     const currentStageIndex = pipelineStages.findIndex((stage) => stage.id === leadStageIds[lead.stage]);
     const nextStageIndex = direction === "forward" ? currentStageIndex + 1 : currentStageIndex - 1;
     const nextStage = pipelineStages[nextStageIndex];
@@ -37,15 +54,15 @@ const PipelinePage = () => {
     }
 
     const nextStageLabel = leadStageLabelsById[nextStage.id];
-    const nextLeads = moveLeadToStage(leadRepository, lead.id, nextStageLabel);
+    const nextLeads = await moveLeadToStageAsync(leadRepository, lead.id, nextStageLabel);
     const updatedLead = nextLeads.find((item) => item.id === lead.id);
 
     if (updatedLead?.stage === "Postventa") {
-      ensureClientFromLead(clientRepository, updatedLead);
+      await ensureClientFromLeadAsync(clientRepository, updatedLead);
       const client = clientRepository.getBySourceLeadId(updatedLead.id);
 
       if (client) {
-        ensurePostSaleTask(taskStore, client);
+        await ensurePostSaleTaskAsync(taskStore, client);
       }
     }
 
@@ -92,7 +109,7 @@ const PipelinePage = () => {
                           variant="outline"
                           size="sm"
                           disabled={!canMoveBack}
-                          onClick={() => moveLead(lead, "backward")}
+                          onClick={() => void moveLead(lead, "backward")}
                         >
                           <ArrowLeft className="h-4 w-4" />
                           Retroceder
@@ -101,7 +118,7 @@ const PipelinePage = () => {
                           type="button"
                           size="sm"
                           disabled={!canMoveForward}
-                          onClick={() => moveLead(lead, "forward")}
+                          onClick={() => void moveLead(lead, "forward")}
                         >
                           Avanzar
                           <ArrowRight className="h-4 w-4" />

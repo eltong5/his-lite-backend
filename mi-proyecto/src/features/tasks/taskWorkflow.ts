@@ -70,3 +70,33 @@ export const ensurePostSaleTask = (store: LocalCrmTaskStore, client: Client): Cr
     notes: "Contactar al cliente, validar onboarding y dejar seguimiento de renovacion.",
   });
 };
+
+export const ensurePostSaleTaskAsync = async (store: LocalCrmTaskStore, client: Client): Promise<CrmTaskRecord[]> => {
+  const existingTask = store.getByClientId(client.id).find((task) => task.title === "Programar bienvenida de postventa");
+
+  if (existingTask) {
+    return store.list();
+  }
+
+  const dueAt = new Date();
+  dueAt.setDate(dueAt.getDate() + 1);
+  dueAt.setHours(9, 0, 0, 0);
+
+  return store.createAsync({
+    id: `task-${client.id}-welcome`,
+    agencyId: client.agencyId,
+    title: "Programar bienvenida de postventa",
+    dueAt: dueAt.toISOString(),
+    urgent: true,
+    subjectName: client.fullName,
+    stage: "Postventa",
+    advisor: client.advisor,
+    channel: client.phone ? "WhatsApp" : client.email ? "Email" : "CRM",
+    status: "Pendiente",
+    entityType: "client",
+    clientId: client.id,
+    leadId: client.sourceLeadId,
+    createdAt: new Date().toISOString(),
+    notes: "Contactar al cliente, validar onboarding y dejar seguimiento de renovacion.",
+  });
+};

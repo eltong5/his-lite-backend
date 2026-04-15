@@ -392,11 +392,14 @@ El siguiente paso de producto y codigo debe ser:
 - 2026-04-15: Migracion gradual desde `localStorage` hacia Supabase sin romper la UI actual.
 - 2026-04-15: Consolidacion del modo multiagencia real empezando por `agencies` y siguiendo por `advisors` y `leads`.
 - 2026-04-15: Migracion del modulo de `advisors` hacia Supabase con respaldo local temporal.
+- 2026-04-15: Migracion del modulo de `leads` hacia Supabase, incluyendo carga, edicion, movimiento de pipeline e ingesta automatica.
+- 2026-04-15: Migracion del flujo `Postventa -> clients -> tasks` hacia Supabase con respaldo local temporal.
 
 ### Siguiente Paso
 
 - Terminar de validar `advisors` en Supabase para que el equipo de cada agencia ya no dependa de `localStorage`.
-- Despues migrar `leads`, incluyendo carga, creacion, edicion e ingesta automatica.
+- Terminar de validar `leads` en Supabase, incluyendo carga, creacion, edicion e ingesta automatica.
+- Terminar de validar `clients`, `tasks` y conversion de `Postventa` para cerrar el flujo comercial principal en base real.
 - Mantener fallback local solo mientras validamos cada modulo en base real.
 
 ## Regla De Producto

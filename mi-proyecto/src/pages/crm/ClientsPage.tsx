@@ -27,7 +27,13 @@ import { listActiveAdvisorNames, loadAdvisors } from "@/features/advisors/adviso
 import { LocalStorageAdvisorStore } from "@/features/advisors/localStorageAdvisorStore";
 import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
 import { ClientStatus } from "@/features/clients/clientModel";
-import { buildClientHealth, buildUpcomingRenewals, createClient, listClients } from "@/features/clients/clientService";
+import {
+  buildClientHealth,
+  buildUpcomingRenewals,
+  createClientAsync,
+  listClients,
+  loadClients,
+} from "@/features/clients/clientService";
 import { LeadAdvisor } from "@/lib/crm-data";
 
 const clientRepository = new LocalStorageClientRepository();
@@ -67,6 +73,7 @@ const ClientsPage = () => {
   const [form, setForm] = useState<ClientFormState>(defaultFormState);
   const [errors, setErrors] = useState<Partial<Record<keyof ClientFormState, string>>>({});
   const [clients, setClients] = useState(() => listClients(clientRepository));
+  const [isSavingClient, setIsSavingClient] = useState(false);
   const clientHealth = useMemo(() => buildClientHealth(clients), [clients]);
   const upcomingRenewals = useMemo(() => buildUpcomingRenewals(clients), [clients]);
   const [advisorVersion, setAdvisorVersion] = useState(0);
@@ -83,6 +90,23 @@ const ClientsPage = () => {
     };
 
     void syncAdvisors();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const syncClients = async () => {
+      const syncedClients = await loadClients(clientRepository);
+      if (active) {
+        setClients(syncedClients);
+      }
+    };
+
+    void syncClients();
 
     return () => {
       active = false;
@@ -109,7 +133,7 @@ const ClientsPage = () => {
     return nextErrors;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const validationErrors = validateForm();
@@ -118,8 +142,8 @@ const ClientsPage = () => {
       return;
     }
 
-    setClients(
-      createClient(clientRepository, {
+    setIsSavingClient(true);
+    const nextClients = await createClientAsync(clientRepository, {
         fullName: form.fullName,
         product: form.product,
         policyNumber: form.policyNumber || undefined,
@@ -132,11 +156,12 @@ const ClientsPage = () => {
         city: form.city || undefined,
         country: form.country || undefined,
         notes: form.notes || undefined,
-      }),
-    );
+      });
+    setClients(nextClients);
 
     resetForm();
     setDialogOpen(false);
+    setIsSavingClient(false);
   };
 
   return (
@@ -299,7 +324,9 @@ const ClientsPage = () => {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">Guardar cliente</Button>
+              <Button type="submit" disabled={isSavingClient}>
+                {isSavingClient ? "Guardando..." : "Guardar cliente"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

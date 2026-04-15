@@ -1,5 +1,5 @@
 import { ArrowRight, CircleAlert, Clock3, FileText, TrendingUp, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadRow } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
-import { listLeads } from "@/features/leads/leadService";
+import { listLeads, loadLeads } from "@/features/leads/leadService";
 import {
   buildDashboardStats,
   buildPipelineHeadline,
@@ -21,11 +21,29 @@ const leadRepository = new LocalStorageLeadRepository();
 
 const DashboardPage = () => {
   const [leads] = useState<LeadRow[]>(() => listLeads(leadRepository));
-  const stats = useMemo(() => buildDashboardStats(leads), [leads]);
-  const pipelineSummary = useMemo(() => buildPipelineSummary(leads), [leads]);
-  const activityFeed = useMemo(() => buildRecentActivity(leads), [leads]);
-  const todayTasks = useMemo(() => buildTodayTasks(leads), [leads]);
-  const pipelineHeadline = useMemo(() => buildPipelineHeadline(leads), [leads]);
+  const [syncedLeads, setSyncedLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
+  useEffect(() => {
+    let active = true;
+
+    const syncLeads = async () => {
+      const nextLeads = await loadLeads(leadRepository);
+      if (active) {
+        setSyncedLeads(nextLeads);
+      }
+    };
+
+    void syncLeads();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const stats = useMemo(() => buildDashboardStats(syncedLeads), [syncedLeads]);
+  const pipelineSummary = useMemo(() => buildPipelineSummary(syncedLeads), [syncedLeads]);
+  const activityFeed = useMemo(() => buildRecentActivity(syncedLeads), [syncedLeads]);
+  const todayTasks = useMemo(() => buildTodayTasks(syncedLeads), [syncedLeads]);
+  const pipelineHeadline = useMemo(() => buildPipelineHeadline(syncedLeads), [syncedLeads]);
 
   return (
     <CrmShell

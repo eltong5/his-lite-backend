@@ -3,7 +3,11 @@ import { getCurrentAgency } from "@/features/agencies/agencyService";
 import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 import { buildClientFromLead, Client } from "@/features/clients/clientModel";
 import { ClientRepository } from "@/features/clients/clientRepository";
+import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
+import { SupabaseClientRepository } from "@/features/clients/supabaseClientRepository";
+import { isSupabaseConfigured } from "@/integrations/supabase/client";
 const agencyStore = new LocalStorageAgencyStore();
+const supabaseClientRepository = new SupabaseClientRepository();
 
 export const buildClientsFromLeads = (leads: LeadRow[]): Client[] =>
   leads.filter((lead) => lead.stage === "Postventa").map(buildClientFromLead);
@@ -26,6 +30,25 @@ const normalizeClientDraft = (draft: ClientDraft): ClientDraft => ({
 
 export const listClients = (repository: ClientRepository): Client[] => repository.list();
 
+export const loadClients = async (repository: LocalStorageClientRepository): Promise<Client[]> => {
+  if (!isSupabaseConfigured) {
+    return repository.list();
+  }
+
+  try {
+    const agencyId = getCurrentAgency(agencyStore).id;
+    const clients = await supabaseClientRepository.listByAgency(agencyId);
+    if (clients.length === 0) {
+      return repository.list();
+    }
+
+    repository.saveAll(clients);
+    return clients;
+  } catch {
+    return repository.list();
+  }
+};
+
 export const createClient = (repository: ClientRepository, draft: ClientDraft): Client[] => {
   const normalizedDraft = normalizeClientDraft(draft);
   const nextClient: Client = {
@@ -38,6 +61,32 @@ export const createClient = (repository: ClientRepository, draft: ClientDraft): 
   return repository.create(nextClient);
 };
 
+export const createClientAsync = async (
+  repository: LocalStorageClientRepository,
+  draft: ClientDraft,
+): Promise<Client[]> => {
+  const normalizedDraft = normalizeClientDraft(draft);
+  const nextClient: Client = {
+    id: `client-${Date.now()}`,
+    agencyId: draft.agencyId || getCurrentAgency(agencyStore).id,
+    createdAt: new Date().toISOString(),
+    ...normalizedDraft,
+  };
+
+  const persistLocally = (client: Client) => repository.create(client);
+
+  if (!isSupabaseConfigured) {
+    return persistLocally(nextClient);
+  }
+
+  try {
+    const savedClient = await supabaseClientRepository.save(nextClient);
+    return persistLocally(savedClient);
+  } catch {
+    return persistLocally(nextClient);
+  }
+};
+
 export const ensureClientFromLead = (repository: ClientRepository, lead: LeadRow): Client[] => {
   const existingClient = repository.getBySourceLeadId(lead.id);
 
@@ -46,6 +95,31 @@ export const ensureClientFromLead = (repository: ClientRepository, lead: LeadRow
   }
 
   return repository.create(buildClientFromLead(lead));
+};
+
+export const ensureClientFromLeadAsync = async (
+  repository: LocalStorageClientRepository,
+  lead: LeadRow,
+): Promise<Client[]> => {
+  const existingClient = repository.getBySourceLeadId(lead.id);
+
+  if (existingClient) {
+    return repository.list();
+  }
+
+  const nextClient = buildClientFromLead(lead);
+  const persistLocally = (client: Client) => repository.create(client);
+
+  if (!isSupabaseConfigured) {
+    return persistLocally(nextClient);
+  }
+
+  try {
+    const savedClient = await supabaseClientRepository.save(nextClient);
+    return persistLocally(savedClient);
+  } catch {
+    return persistLocally(nextClient);
+  }
 };
 
 const monthMap: Record<string, number> = {

@@ -24,10 +24,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { listActiveAdvisorNames, loadAdvisors } from "@/features/advisors/advisorService";
 import { LocalStorageAdvisorStore } from "@/features/advisors/localStorageAdvisorStore";
-import { ingestLead } from "@/features/leads/leadIngestionService";
+import { ingestLeadAsync } from "@/features/leads/leadIngestionService";
 import { LeadAdvisor, LeadRow, LeadSource, LeadStage } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
-import { createLead, listLeads, updateLead } from "@/features/leads/leadService";
+import { createLeadAsync, listLeads, loadLeads, updateLeadAsync } from "@/features/leads/leadService";
 import { leadStageOptions } from "@/features/leads/leadMetadata";
 
 const stageOptions: LeadStage[] = leadStageOptions;
@@ -83,6 +83,7 @@ const LeadsPage = () => {
   const [leads, setLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
   const [ingestionMessage, setIngestionMessage] = useState<string | null>(null);
   const [advisorVersion, setAdvisorVersion] = useState(0);
+  const [isSavingLead, setIsSavingLead] = useState(false);
   const advisorOptions = useMemo(() => listActiveAdvisorNames(advisorStore) as LeadAdvisor[], [dialogOpen, advisorVersion]);
 
   useEffect(() => {
@@ -96,6 +97,23 @@ const LeadsPage = () => {
     };
 
     void syncAdvisors();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const syncLeads = async () => {
+      const syncedLeads = await loadLeads(leadRepository);
+      if (active) {
+        setLeads(syncedLeads);
+      }
+    };
+
+    void syncLeads();
 
     return () => {
       active = false;
@@ -190,7 +208,7 @@ const LeadsPage = () => {
     return nextErrors;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const validationErrors = validateForm();
@@ -216,14 +234,19 @@ const LeadsPage = () => {
       notes: form.notes.trim() || undefined,
     };
 
-    setLeads(editingLeadId ? updateLead(leadRepository, editingLeadId, draft) : createLead(leadRepository, draft));
+    setIsSavingLead(true);
+    const nextLeads = editingLeadId
+      ? await updateLeadAsync(leadRepository, editingLeadId, draft)
+      : await createLeadAsync(leadRepository, draft);
+    setLeads(nextLeads);
     setIngestionMessage(null);
     resetForm();
     setDialogOpen(false);
+    setIsSavingLead(false);
   };
 
-  const handleSimulatedIngestion = () => {
-    const result = ingestLead(leadRepository, {
+  const handleSimulatedIngestion = async () => {
+    const result = await ingestLeadAsync(leadRepository, {
       name: "Pepito Perez",
       phone: "+573001112233",
       email: "pepito@email.com",
@@ -453,7 +476,9 @@ const LeadsPage = () => {
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">{editingLeadId ? "Guardar cambios" : "Guardar lead"}</Button>
+              <Button type="submit" disabled={isSavingLead}>
+                {isSavingLead ? "Guardando..." : editingLeadId ? "Guardar cambios" : "Guardar lead"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -558,7 +583,7 @@ const LeadsPage = () => {
             {ingestionMessage ? <p className="mt-2 text-sm text-primary">{ingestionMessage}</p> : null}
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <Button type="button" variant="outline" onClick={handleSimulatedIngestion}>
+            <Button type="button" variant="outline" onClick={() => void handleSimulatedIngestion()}>
               Simular ingreso API
             </Button>
             <div className="relative min-w-[240px]">

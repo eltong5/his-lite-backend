@@ -63,6 +63,11 @@ export class LocalStorageLeadRepository implements LeadRepository {
     return nextLeads;
   }
 
+  saveAll(leads: LeadRow[]): LeadRow[] {
+    this.writeLeads(leads);
+    return leads;
+  }
+
   update(leadId: string, nextLead: LeadRow): LeadRow[] {
     const nextLeads = this.readLeads().map((lead) => (lead.id === leadId ? nextLead : lead));
     this.writeLeads(nextLeads);

@@ -1,9 +1,12 @@
 import { CrmTaskRecord } from "@/features/tasks/taskModel";
 import { getCurrentAgency } from "@/features/agencies/agencyService";
 import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
+import { SupabaseTaskRepository } from "@/features/tasks/supabaseTaskRepository";
+import { isSupabaseConfigured } from "@/integrations/supabase/client";
 
 const STORAGE_KEY = "crm-tasks-v2";
 const agencyStore = new LocalStorageAgencyStore();
+const supabaseTaskRepository = new SupabaseTaskRepository();
 
 const defaultTasks: CrmTaskRecord[] = [
   {
@@ -94,11 +97,76 @@ export class LocalCrmTaskStore {
     return nextTasks;
   }
 
+  saveAll(tasks: CrmTaskRecord[]): CrmTaskRecord[] {
+    this.write(tasks);
+    return tasks;
+  }
+
   complete(taskId: string): CrmTaskRecord[] {
     const nextTasks = this.read().map((task) =>
       task.id === taskId ? { ...task, status: "Completada", urgent: false } : task,
     );
     this.write(nextTasks);
     return nextTasks;
+  }
+
+  async syncFromSupabase(): Promise<CrmTaskRecord[]> {
+    if (!isSupabaseConfigured) {
+      return this.list();
+    }
+
+    try {
+      const agencyId = this.getCurrentAgencyId();
+      const tasks = await supabaseTaskRepository.listByAgency(agencyId);
+      if (tasks.length === 0) {
+        return this.list();
+      }
+
+      this.saveAll(tasks);
+      return tasks;
+    } catch {
+      return this.list();
+    }
+  }
+
+  async createAsync(task: CrmTaskRecord): Promise<CrmTaskRecord[]> {
+    const persistLocally = (nextTask: CrmTaskRecord) => this.create(nextTask);
+
+    if (!isSupabaseConfigured) {
+      return persistLocally(task);
+    }
+
+    try {
+      const savedTask = await supabaseTaskRepository.save(task);
+      return persistLocally(savedTask);
+    } catch {
+      return persistLocally(task);
+    }
+  }
+
+  async completeAsync(taskId: string): Promise<CrmTaskRecord[]> {
+    const currentTask = this.read().find((task) => task.id === taskId);
+
+    if (!currentTask) {
+      return this.read();
+    }
+
+    const nextTask = { ...currentTask, status: "Completada" as const, urgent: false };
+    const persistLocally = (task: CrmTaskRecord) => {
+      const nextTasks = this.read().map((item) => (item.id === taskId ? task : item));
+      this.write(nextTasks);
+      return nextTasks;
+    };
+
+    if (!isSupabaseConfigured) {
+      return persistLocally(nextTask);
+    }
+
+    try {
+      const savedTask = await supabaseTaskRepository.save(nextTask);
+      return persistLocally(savedTask);
+    } catch {
+      return persistLocally(nextTask);
+    }
   }
 }
