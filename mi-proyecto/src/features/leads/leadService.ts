@@ -1,7 +1,12 @@
 import { LeadRow } from "@/lib/crm-data";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 import { LeadRepository } from "@/features/leads/leadRepository";
 
-export type LeadDraft = Omit<LeadRow, "id" | "createdAt">;
+export type LeadDraft = Omit<LeadRow, "id" | "createdAt" | "agencyId"> & {
+  agencyId?: string;
+};
+const agencyStore = new LocalStorageAgencyStore();
 
 const normalizeLeadDraft = (draft: LeadDraft): LeadDraft => ({
   ...draft,
@@ -24,6 +29,7 @@ export const getLeadById = (repository: LeadRepository, leadId: string): LeadRow
 export const createLead = (repository: LeadRepository, draft: LeadDraft): LeadRow[] => {
   const nextLead: LeadRow = {
     id: `lead-${Date.now()}`,
+    agencyId: draft.agencyId || getCurrentAgency(agencyStore).id,
     createdAt: new Date().toISOString(),
     ...normalizeLeadDraft(draft),
   };

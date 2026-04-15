@@ -6,6 +6,7 @@ export type TaskEntityType = "lead" | "client";
 
 export type CrmTaskRecord = {
   id: string;
+  agencyId: string;
   title: string;
   dueAt: string;
   urgent: boolean;

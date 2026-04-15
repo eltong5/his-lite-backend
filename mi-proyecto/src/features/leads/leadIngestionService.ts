@@ -1,5 +1,8 @@
 import { LeadRepository } from "@/features/leads/leadRepository";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 import { LeadRow } from "@/lib/crm-data";
+const agencyStore = new LocalStorageAgencyStore();
 
 export type ExternalLeadPayload = {
   name?: string;
@@ -42,6 +45,7 @@ export const ingestLead = (
 
   const nextLead: LeadRow = {
     id: `lead-${Date.now()}`,
+    agencyId: getCurrentAgency(agencyStore).id,
     createdAt: new Date().toISOString(),
     name,
     phone,

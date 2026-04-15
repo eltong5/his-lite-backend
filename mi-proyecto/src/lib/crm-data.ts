@@ -6,6 +6,7 @@ export type LeadAdvisor = "Laura M" | "David P" | "Jorge R" | "Sin asignar";
 
 export type LeadRow = {
   id: string;
+  agencyId: string;
   name: string;
   product: string;
   source: LeadSource;
@@ -41,6 +42,7 @@ export const pipelineStages = [
 export const leadRows: LeadRow[] = [
   {
     id: "lead-maria-lopez",
+    agencyId: "agency-demo-001",
     name: "Maria Lopez",
     product: "Seguro Auto",
     source: "Landing Page",
@@ -55,6 +57,7 @@ export const leadRows: LeadRow[] = [
   },
   {
     id: "lead-carlos-ruiz",
+    agencyId: "agency-demo-001",
     name: "Carlos Ruiz",
     product: "Seguro Vida",
     source: "WhatsApp",
@@ -68,6 +71,7 @@ export const leadRows: LeadRow[] = [
   },
   {
     id: "lead-ana-martinez",
+    agencyId: "agency-demo-001",
     name: "Ana Martinez",
     product: "Seguro Salud",
     source: "Referido",
@@ -80,6 +84,7 @@ export const leadRows: LeadRow[] = [
   },
   {
     id: "lead-constructora-delta",
+    agencyId: "agency-demo-001",
     name: "Constructora Delta",
     product: "Poliza Empresarial",
     source: "Formulario",
@@ -90,6 +95,35 @@ export const leadRows: LeadRow[] = [
     country: "Colombia",
     campaignName: "Formulario Empresas",
     externalLeadId: "form-empresas-22",
+  },
+  {
+    id: "lead-luisa-castano",
+    agencyId: "agency-demo-002",
+    name: "Luisa Castano",
+    product: "Seguro Hogar",
+    source: "Landing Page",
+    stage: "Nuevo lead",
+    advisor: "Sin asignar",
+    nextStep: "Contactar y calificar",
+    city: "Medellin",
+    country: "Colombia",
+    age: 38,
+    campaignName: "Landing Hogar Norte",
+    externalLeadId: "north-landing-001",
+  },
+  {
+    id: "lead-grupo-montana",
+    agencyId: "agency-demo-002",
+    name: "Grupo Montana",
+    product: "Poliza Empresarial",
+    source: "Formulario",
+    stage: "Postventa",
+    advisor: "Sin asignar",
+    nextStep: "Programar bienvenida",
+    city: "Bucaramanga",
+    country: "Colombia",
+    campaignName: "Empresas Norte",
+    externalLeadId: "north-form-009",
   },
 ];
 

@@ -343,6 +343,7 @@ Estado actual estimado:
 - Avance real:
   - entidad `Agency` preparada a nivel base
   - shell del CRM mostrando agencia actual, plan y tamano del equipo
+  - aislamiento basico de datos por `agencyId` en leads, clientes, tareas y asesores
 
 ## Orden Recomendado De Construccion
 
@@ -369,6 +370,8 @@ El siguiente paso de producto y codigo debe ser:
 
 ## Bitacora De Avance
 
+### Hecho
+
 - 2026-04-15: Se reemplazo el roadmap original por la vision del producto como SaaS CRM para agentes y agencias de seguros.
 - 2026-04-15: Se definio una entidad `Client` mas completa con datos de negocio y contacto.
 - 2026-04-15: Se conecto el modulo de clientes con creacion manual y persistencia local.
@@ -376,8 +379,25 @@ El siguiente paso de producto y codigo debe ser:
 - 2026-04-15: Se conecto el seguimiento de postventa con tareas automaticas para clientes nuevos.
 - 2026-04-15: Se agrego un bloque operativo de renovaciones proximas en el modulo de clientes.
 - 2026-04-15: Se amplio la entidad `Lead` para soportar datos de captacion como ciudad, pais, edad, campana e identificador externo.
-- 2026-04-15: El siguiente punto pendiente es construir la entrada automatica de leads mediante una capa de ingesta que evite duplicados por `externalLeadId`.
+- 2026-04-15: Se construyo una capa de ingesta automatica para leads con control de duplicados por `externalLeadId`.
 - 2026-04-15: Se agrego una base inicial de `Agency` para empezar a preparar el modo multiagencia del SaaS.
+- 2026-04-15: Se agregaron asesores reales por agencia y formularios conectados a esa fuente dinamica.
+- 2026-04-15: Se agrego aislamiento basico por agencia para preparar el CRM hacia modo SaaS multiagencia real.
+- 2026-04-15: Se conecto la infraestructura base con Supabase.
+- 2026-04-15: Se creo el esquema inicial en Supabase con tablas base del CRM.
+- 2026-04-15: El modulo de agencias comenzo a leer y guardar contra la base real con respaldo local temporal.
+
+### En Progreso
+
+- 2026-04-15: Migracion gradual desde `localStorage` hacia Supabase sin romper la UI actual.
+- 2026-04-15: Consolidacion del modo multiagencia real empezando por `agencies` y siguiendo por `advisors` y `leads`.
+- 2026-04-15: Migracion del modulo de `advisors` hacia Supabase con respaldo local temporal.
+
+### Siguiente Paso
+
+- Terminar de validar `advisors` en Supabase para que el equipo de cada agencia ya no dependa de `localStorage`.
+- Despues migrar `leads`, incluyendo carga, creacion, edicion e ingesta automatica.
+- Mantener fallback local solo mientras validamos cada modulo en base real.
 
 ## Regla De Producto
 

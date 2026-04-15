@@ -4,6 +4,7 @@ export type ClientStatus = "Al dia" | "Pendiente" | "Seguimiento";
 
 export type Client = {
   id: string;
+  agencyId: string;
   fullName: string;
   product: string;
   policyNumber?: string;
@@ -33,6 +34,7 @@ export const formatClientRenewalDate = (createdAt?: string) => {
 
 export const buildClientFromLead = (lead: LeadRow): Client => ({
   id: `client-${lead.id}`,
+  agencyId: lead.agencyId,
   fullName: lead.name,
   product: lead.product,
   renewalDate: formatClientRenewalDate(lead.createdAt),

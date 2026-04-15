@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, FileText, ShieldCheck } from "lucide-react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
@@ -23,13 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { listActiveAdvisorNames, loadAdvisors } from "@/features/advisors/advisorService";
+import { LocalStorageAdvisorStore } from "@/features/advisors/localStorageAdvisorStore";
 import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
 import { ClientStatus } from "@/features/clients/clientModel";
 import { buildClientHealth, buildUpcomingRenewals, createClient, listClients } from "@/features/clients/clientService";
 import { LeadAdvisor } from "@/lib/crm-data";
 
 const clientRepository = new LocalStorageClientRepository();
-const advisorOptions: LeadAdvisor[] = ["Laura M", "David P", "Jorge R", "Sin asignar"];
+const advisorStore = new LocalStorageAdvisorStore();
 const statusOptions: ClientStatus[] = ["Al dia", "Seguimiento", "Pendiente"];
 
 type ClientFormState = {
@@ -67,6 +69,25 @@ const ClientsPage = () => {
   const [clients, setClients] = useState(() => listClients(clientRepository));
   const clientHealth = useMemo(() => buildClientHealth(clients), [clients]);
   const upcomingRenewals = useMemo(() => buildUpcomingRenewals(clients), [clients]);
+  const [advisorVersion, setAdvisorVersion] = useState(0);
+  const advisorOptions = useMemo(() => listActiveAdvisorNames(advisorStore) as LeadAdvisor[], [dialogOpen, advisorVersion]);
+
+  useEffect(() => {
+    let active = true;
+
+    const syncAdvisors = async () => {
+      await loadAdvisors(advisorStore);
+      if (active) {
+        setAdvisorVersion((current) => current + 1);
+      }
+    };
+
+    void syncAdvisors();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const resetForm = () => {
     setForm(defaultFormState);

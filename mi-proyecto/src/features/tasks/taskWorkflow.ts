@@ -27,6 +27,7 @@ export const buildLeadTasks = (leads: LeadRow[]): CrmTaskRecord[] =>
     .slice(0, 6)
     .map((lead, index) => ({
       id: `task-${lead.id}`,
+      agencyId: lead.agencyId,
       title: lead.nextStep,
       dueAt: new Date(new Date().setHours(9 + index, 0, 0, 0)).toISOString(),
       urgent: lead.stage === "Cierre" || lead.stage === "Negociacion",
@@ -53,6 +54,7 @@ export const ensurePostSaleTask = (store: LocalCrmTaskStore, client: Client): Cr
 
   return store.create({
     id: `task-${client.id}-welcome`,
+    agencyId: client.agencyId,
     title: "Programar bienvenida de postventa",
     dueAt: dueAt.toISOString(),
     urgent: true,

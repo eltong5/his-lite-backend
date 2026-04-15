@@ -1,6 +1,7 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { CrmShell } from "@/components/crm/CrmShell";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,8 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AgencyPlan, AgencyRecord } from "@/features/agencies/agencyModel";
-import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { getCurrentAgency, listAgencies, loadAgencies, saveAgency } from "@/features/agencies/agencyService";
 import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
+import {
+  checkSupabaseConnection,
+  SupabaseConnectionResult,
+} from "@/integrations/supabase/health";
 
 const agencyStore = new LocalStorageAgencyStore();
 const planOptions: AgencyPlan[] = ["Starter", "Growth", "Pro"];
@@ -40,9 +45,36 @@ const toFormState = (agency: AgencyRecord): AgencyFormState => ({
 });
 
 const AgencyPage = () => {
+  const [agencies, setAgencies] = useState(() => listAgencies(agencyStore));
   const [form, setForm] = useState<AgencyFormState>(() => toFormState(getCurrentAgency(agencyStore)));
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof AgencyFormState, string>>>({});
+  const [supabaseStatus, setSupabaseStatus] = useState<SupabaseConnectionResult | null>(null);
+  const [isCheckingSupabase, setIsCheckingSupabase] = useState(false);
+  const [isLoadingAgencies, setIsLoadingAgencies] = useState(true);
+  const [isSavingAgency, setIsSavingAgency] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const syncAgencies = async () => {
+      const syncedAgencies = await loadAgencies(agencyStore);
+      if (!active) {
+        return;
+      }
+
+      const currentAgency = getCurrentAgency(agencyStore);
+      setAgencies(syncedAgencies);
+      setForm(toFormState(currentAgency));
+      setIsLoadingAgencies(false);
+    };
+
+    void syncAgencies();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleInputChange = (field: keyof AgencyFormState, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -65,7 +97,7 @@ const AgencyPage = () => {
     return nextErrors;
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const validationErrors = validateForm();
@@ -74,7 +106,7 @@ const AgencyPage = () => {
       return;
     }
 
-    agencyStore.saveCurrent({
+    const updatedAgency = {
       id: form.id,
       name: form.name.trim(),
       slug: form.slug.trim(),
@@ -82,10 +114,44 @@ const AgencyPage = () => {
       country: form.country.trim(),
       plan: form.plan,
       teamSize: Number(form.teamSize),
-    });
+    };
 
-    setSavedMessage("Agencia actualizada. Recarga o navega entre modulos para ver los cambios reflejados en todo el CRM.");
+    setIsSavingAgency(true);
+    const savedAgency = await saveAgency(agencyStore, updatedAgency);
+    const nextAgencies = agencyStore.list();
+
+    setAgencies(nextAgencies);
+    setForm(toFormState(savedAgency));
+    setSavedMessage("Agencia actualizada y sincronizada con la base actual del CRM.");
+    setIsSavingAgency(false);
   };
+
+  const handleAgencySwitch = (agencyId: string) => {
+    const agency = agencies.find((item) => item.id === agencyId);
+    if (!agency) {
+      return;
+    }
+
+    agencyStore.saveCurrent(agency);
+    setForm(toFormState(agency));
+    setSavedMessage("Agencia cambiada. Navega a otros modulos para ver los datos de esa cuenta.");
+  };
+
+  const handleSupabaseCheck = async () => {
+    setIsCheckingSupabase(true);
+    const result = await checkSupabaseConnection();
+    setSupabaseStatus(result);
+    setIsCheckingSupabase(false);
+  };
+
+  const supabaseBadgeLabel =
+    supabaseStatus?.status === "ready"
+      ? "Conectado"
+      : supabaseStatus?.status === "schema-missing"
+        ? "Falta esquema"
+        : supabaseStatus?.status === "unreachable"
+          ? "Error de conexion"
+          : "Pendiente";
 
   return (
     <CrmShell
@@ -104,7 +170,29 @@ const AgencyPage = () => {
         </CardHeader>
         <CardContent>
           <form id="agency-form" className="space-y-5" onSubmit={handleSubmit}>
+            {isLoadingAgencies ? (
+              <div className="rounded-2xl border border-dashed border-border/70 bg-background/60 p-4 text-sm text-muted-foreground">
+                Cargando agencias desde la fuente actual...
+              </div>
+            ) : null}
+
             <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label>Seleccionar agencia</Label>
+                <Select value={form.id} onValueChange={handleAgencySwitch}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una agencia" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agencies.map((agency) => (
+                      <SelectItem key={agency.id} value={agency.id}>
+                        {agency.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="agency-name">Nombre *</Label>
                 <Input
@@ -181,9 +269,45 @@ const AgencyPage = () => {
             {savedMessage ? <p className="text-sm text-primary">{savedMessage}</p> : null}
 
             <div className="flex justify-end">
-              <Button type="submit">Guardar cambios</Button>
+              <Button type="submit" disabled={isLoadingAgencies || isSavingAgency}>
+                {isSavingAgency ? "Guardando..." : "Guardar cambios"}
+              </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 shadow-card">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Infraestructura</p>
+            <CardTitle className="mt-1 text-xl">Conexion con Supabase</CardTitle>
+          </div>
+          <Badge variant={supabaseStatus?.status === "ready" ? "default" : "secondary"}>
+            {supabaseBadgeLabel}
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Esta prueba valida si el frontend ya puede hablar con tu proyecto de Supabase y si la
+            tabla base <span className="font-medium text-foreground">agencies</span> ya existe.
+          </p>
+
+          {supabaseStatus ? (
+            <div className="rounded-2xl border border-border/70 bg-background/80 p-4 text-sm text-foreground">
+              {supabaseStatus.message}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border/70 bg-background/60 p-4 text-sm text-muted-foreground">
+              Todavia no se ha ejecutado la prueba de conexion.
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button type="button" onClick={handleSupabaseCheck} disabled={isCheckingSupabase}>
+              {isCheckingSupabase ? "Probando..." : "Probar conexion Supabase"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </CrmShell>

@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Eye, Pencil, Plus, Search } from "lucide-react";
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { listActiveAdvisorNames, loadAdvisors } from "@/features/advisors/advisorService";
+import { LocalStorageAdvisorStore } from "@/features/advisors/localStorageAdvisorStore";
 import { ingestLead } from "@/features/leads/leadIngestionService";
 import { LeadAdvisor, LeadRow, LeadSource, LeadStage } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
@@ -30,7 +32,7 @@ import { leadStageOptions } from "@/features/leads/leadMetadata";
 
 const stageOptions: LeadStage[] = leadStageOptions;
 const sourceOptions: LeadSource[] = ["Landing Page", "WhatsApp", "Referido", "Formulario", "Llamada", "Email"];
-const advisorOptions: LeadAdvisor[] = ["Laura M", "David P", "Jorge R", "Sin asignar"];
+const advisorStore = new LocalStorageAdvisorStore();
 
 type LeadFormState = {
   name: string;
@@ -80,6 +82,25 @@ const LeadsPage = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof LeadFormState, string>>>({});
   const [leads, setLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
   const [ingestionMessage, setIngestionMessage] = useState<string | null>(null);
+  const [advisorVersion, setAdvisorVersion] = useState(0);
+  const advisorOptions = useMemo(() => listActiveAdvisorNames(advisorStore) as LeadAdvisor[], [dialogOpen, advisorVersion]);
+
+  useEffect(() => {
+    let active = true;
+
+    const syncAdvisors = async () => {
+      await loadAdvisors(advisorStore);
+      if (active) {
+        setAdvisorVersion((current) => current + 1);
+      }
+    };
+
+    void syncAdvisors();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filteredLeads = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

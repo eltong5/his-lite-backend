@@ -1,24 +1,34 @@
 import { leadRows, LeadRow } from "@/lib/crm-data";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 import { LeadRepository } from "@/features/leads/leadRepository";
 
 const STORAGE_KEY = "crm-leads";
+const agencyStore = new LocalStorageAgencyStore();
 
 export class LocalStorageLeadRepository implements LeadRepository {
+  private getCurrentAgencyId() {
+    return getCurrentAgency(agencyStore).id;
+  }
+
   private readLeads(): LeadRow[] {
+    const currentAgencyId = this.getCurrentAgencyId();
+
     if (typeof window === "undefined") {
-      return leadRows;
+      return leadRows.filter((lead) => lead.agencyId === currentAgencyId);
     }
 
     const storedLeads = window.localStorage.getItem(STORAGE_KEY);
     if (!storedLeads) {
-      return leadRows;
+      return leadRows.filter((lead) => lead.agencyId === currentAgencyId);
     }
 
     try {
       const parsedLeads = JSON.parse(storedLeads) as LeadRow[];
-      return parsedLeads.length > 0 ? parsedLeads : leadRows;
+      const agencyLeads = parsedLeads.filter((lead) => lead.agencyId === currentAgencyId);
+      return agencyLeads.length > 0 ? agencyLeads : leadRows.filter((lead) => lead.agencyId === currentAgencyId);
     } catch {
-      return leadRows;
+      return leadRows.filter((lead) => lead.agencyId === currentAgencyId);
     }
   }
 
@@ -27,7 +37,12 @@ export class LocalStorageLeadRepository implements LeadRepository {
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+    const storedLeads = window.localStorage.getItem(STORAGE_KEY);
+    const allLeads = storedLeads ? (JSON.parse(storedLeads) as LeadRow[]) : [];
+    const currentAgencyId = this.getCurrentAgencyId();
+    const otherAgencyLeads = allLeads.filter((lead) => lead.agencyId !== currentAgencyId);
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...otherAgencyLeads, ...leads]));
   }
 
   list(): LeadRow[] {

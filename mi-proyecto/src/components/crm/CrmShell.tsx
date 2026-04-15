@@ -1,4 +1,4 @@
-import { Bell, Building2, LayoutGrid, ListTodo, Menu, Target, Users, X } from "lucide-react";
+import { Bell, Building2, LayoutGrid, ListTodo, Menu, Target, UserRound, Users, X } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
@@ -25,6 +25,7 @@ const navItems = [
   { to: "/crm/pipeline", label: "Pipeline", icon: Target },
   { to: "/crm/clientes", label: "Clientes", icon: Users },
   { to: "/crm/tareas", label: "Tareas", icon: ListTodo },
+  { to: "/crm/asesores", label: "Asesores", icon: UserRound },
   { to: "/crm/agencia", label: "Agencia", icon: Building2 },
 ];
 const agencyStore = new LocalStorageAgencyStore();

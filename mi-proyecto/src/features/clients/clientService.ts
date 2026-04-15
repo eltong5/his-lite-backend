@@ -1,11 +1,16 @@
 import { LeadRow } from "@/lib/crm-data";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 import { buildClientFromLead, Client } from "@/features/clients/clientModel";
 import { ClientRepository } from "@/features/clients/clientRepository";
+const agencyStore = new LocalStorageAgencyStore();
 
 export const buildClientsFromLeads = (leads: LeadRow[]): Client[] =>
   leads.filter((lead) => lead.stage === "Postventa").map(buildClientFromLead);
 
-export type ClientDraft = Omit<Client, "id" | "createdAt">;
+export type ClientDraft = Omit<Client, "id" | "createdAt" | "agencyId"> & {
+  agencyId?: string;
+};
 
 const normalizeClientDraft = (draft: ClientDraft): ClientDraft => ({
   ...draft,
@@ -25,6 +30,7 @@ export const createClient = (repository: ClientRepository, draft: ClientDraft): 
   const normalizedDraft = normalizeClientDraft(draft);
   const nextClient: Client = {
     id: `client-${Date.now()}`,
+    agencyId: draft.agencyId || getCurrentAgency(agencyStore).id,
     createdAt: new Date().toISOString(),
     ...normalizedDraft,
   };
