@@ -10,6 +10,7 @@ import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRep
 import { listLeads, loadLeads } from "@/features/leads/leadService";
 import { buildLeadTasks, listStoredTasks } from "@/features/tasks/taskWorkflow";
 import { LocalCrmTaskStore } from "@/features/tasks/taskStore";
+import { CrmTaskRecord } from "@/features/tasks/taskModel";
 
 const automationRules = [
   "Si entra lead desde landing, asignar asesor en menos de 5 minutos.",
@@ -28,42 +29,41 @@ const channelIcons = {
 };
 
 const TasksPage = () => {
-  const [leads] = useState<LeadRow[]>(() => listLeads(leadRepository));
-  const [syncedLeads, setSyncedLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
-  const [storedTasks, setStoredTasks] = useState(() => listStoredTasks(taskStore));
+  const [leads] = useState<LeadRow[]>([]);
+  const [syncedLeads, setSyncedLeads] = useState<LeadRow[]>([]);
+  const [storedTasks, setStoredTasks] = useState<CrmTaskRecord[]>([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   useEffect(() => {
     let active = true;
 
-    const syncLeads = async () => {
-      const nextLeads = await loadLeads(leadRepository);
-      if (active) {
-        setSyncedLeads(nextLeads);
+    const loadData = async () => {
+      setIsLoadingTasks(true);
+      try {
+        const [nextLeads, nextTasks] = await Promise.all([
+          loadLeads(leadRepository),
+          listStoredTasks(taskStore),
+        ]);
+        if (active) {
+          setSyncedLeads(nextLeads);
+          setStoredTasks(nextTasks);
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        if (active) {
+          setIsLoadingTasks(false);
+        }
       }
     };
 
-    void syncLeads();
+    void loadData();
 
     return () => {
       active = false;
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
 
-    const syncTasks = async () => {
-      const nextTasks = await taskStore.syncFromSupabase();
-      if (active) {
-        setStoredTasks(nextTasks);
-      }
-    };
-
-    void syncTasks();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const derivedLeadTasks = useMemo(() => buildLeadTasks(syncedLeads), [syncedLeads]);
   const tasks = useMemo(() => {
@@ -102,7 +102,11 @@ const TasksPage = () => {
             <CardTitle className="mt-1 text-xl">Tareas abiertas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {tasks.length ? (
+            {isLoadingTasks ? (
+              <div className="rounded-2xl border border-dashed border-border/80 bg-background p-6 text-sm text-muted-foreground">
+                Cargando tareas...
+              </div>
+            ) : tasks.length ? (
               tasks.map((task) => {
                 const ChannelIcon = channelIcons[task.channel];
 

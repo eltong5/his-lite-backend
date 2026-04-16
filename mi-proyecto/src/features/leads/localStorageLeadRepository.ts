@@ -45,30 +45,30 @@ export class LocalStorageLeadRepository implements LeadRepository {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...otherAgencyLeads, ...leads]));
   }
 
-  list(): LeadRow[] {
+  async list(): Promise<LeadRow[]> {
     return this.readLeads();
   }
 
-  getById(leadId: string): LeadRow | undefined {
+  async getById(leadId: string): Promise<LeadRow | undefined> {
     return this.readLeads().find((lead) => lead.id === leadId);
   }
 
-  getByExternalLeadId(externalLeadId: string): LeadRow | undefined {
+  async getByExternalLeadId(externalLeadId: string): Promise<LeadRow | undefined> {
     return this.readLeads().find((lead) => lead.externalLeadId === externalLeadId);
   }
 
-  create(lead: LeadRow): LeadRow[] {
+  async create(lead: LeadRow): Promise<LeadRow[]> {
     const nextLeads = [lead, ...this.readLeads()];
     this.writeLeads(nextLeads);
     return nextLeads;
   }
 
-  saveAll(leads: LeadRow[]): LeadRow[] {
+  async saveAll(leads: LeadRow[]): Promise<LeadRow[]> {
     this.writeLeads(leads);
     return leads;
   }
 
-  update(leadId: string, nextLead: LeadRow): LeadRow[] {
+  async update(leadId: string, nextLead: LeadRow): Promise<LeadRow[]> {
     const nextLeads = this.readLeads().map((lead) => (lead.id === leadId ? nextLead : lead));
     this.writeLeads(nextLeads);
     return nextLeads;

@@ -22,9 +22,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { listActiveAdvisorNames, loadAdvisors } from "@/features/advisors/advisorService";
-import { LocalStorageAdvisorStore } from "@/features/advisors/localStorageAdvisorStore";
+import { SupabaseAdvisorRepository } from "@/features/advisors/supabaseAdvisorRepository";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
+import { LocalStorageClientRepository } from "@/features/clients/localStorageClientRepository";
 import { ingestLeadAsync } from "@/features/leads/leadIngestionService";
+import { LocalCrmTaskStore } from "@/features/tasks/taskStore";
+import { ensureClientAndPostSaleWelcomeAsync } from "@/features/workflows/postSaleFlow";
 import { LeadAdvisor, LeadRow, LeadSource, LeadStage } from "@/lib/crm-data";
 import { LocalStorageLeadRepository } from "@/features/leads/localStorageLeadRepository";
 import { createLeadAsync, listLeads, loadLeads, updateLeadAsync } from "@/features/leads/leadService";
@@ -32,7 +36,8 @@ import { leadStageOptions } from "@/features/leads/leadMetadata";
 
 const stageOptions: LeadStage[] = leadStageOptions;
 const sourceOptions: LeadSource[] = ["Landing Page", "WhatsApp", "Referido", "Formulario", "Llamada", "Email"];
-const advisorStore = new LocalStorageAdvisorStore();
+const advisorRepository = new SupabaseAdvisorRepository();
+const agencyStore = new LocalStorageAgencyStore();
 
 type LeadFormState = {
   name: string;
@@ -71,6 +76,8 @@ const defaultFormState: LeadFormState = {
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phonePattern = /^[+\d\s()-]{7,}$/;
 const leadRepository = new LocalStorageLeadRepository();
+const clientRepository = new LocalStorageClientRepository();
+const taskStore = new LocalCrmTaskStore();
 
 const LeadsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -80,23 +87,33 @@ const LeadsPage = () => {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [form, setForm] = useState<LeadFormState>(defaultFormState);
   const [errors, setErrors] = useState<Partial<Record<keyof LeadFormState, string>>>({});
-  const [leads, setLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(true);
   const [ingestionMessage, setIngestionMessage] = useState<string | null>(null);
-  const [advisorVersion, setAdvisorVersion] = useState(0);
   const [isSavingLead, setIsSavingLead] = useState(false);
-  const advisorOptions = useMemo(() => listActiveAdvisorNames(advisorStore) as LeadAdvisor[], [dialogOpen, advisorVersion]);
+  const [advisorOptions, setAdvisorOptions] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
 
-    const syncAdvisors = async () => {
-      await loadAdvisors(advisorStore);
-      if (active) {
-        setAdvisorVersion((current) => current + 1);
+    const loadAdvisorOptions = async () => {
+      try {
+        const currentAgencyId = getCurrentAgency(agencyStore).id;
+        const advisors = await advisorRepository.listByAgency(currentAgencyId);
+        const activeNames = advisors.filter(a => a.active).map(a => a.fullName);
+        if (active) {
+          setAdvisorOptions([...activeNames, "Sin asignar"]);
+        }
+      } catch (error) {
+        console.error("Error loading advisors:", error);
+        // Fallback to default
+        if (active) {
+          setAdvisorOptions(["Sin asignar"]);
+        }
       }
     };
 
-    void syncAdvisors();
+    void loadAdvisorOptions();
 
     return () => {
       active = false;
@@ -106,14 +123,24 @@ const LeadsPage = () => {
   useEffect(() => {
     let active = true;
 
-    const syncLeads = async () => {
-      const syncedLeads = await loadLeads(leadRepository);
-      if (active) {
-        setLeads(syncedLeads);
+    const loadLeadsAsync = async () => {
+      setIsLoadingLeads(true);
+      try {
+        const syncedLeads = await loadLeads(leadRepository);
+        if (active) {
+          setLeads(syncedLeads);
+        }
+      } catch (error) {
+        console.error("Error loading leads:", error);
+        // Fallback to empty or show error
+      } finally {
+        if (active) {
+          setIsLoadingLeads(false);
+        }
       }
     };
 
-    void syncLeads();
+    void loadLeadsAsync();
 
     return () => {
       active = false;
@@ -239,6 +266,14 @@ const LeadsPage = () => {
       ? await updateLeadAsync(leadRepository, editingLeadId, draft)
       : await createLeadAsync(leadRepository, draft);
     setLeads(nextLeads);
+
+    if (draft.stage === "Postventa") {
+      const leadAfter = editingLeadId ? nextLeads.find((l) => l.id === editingLeadId) : nextLeads[0];
+      if (leadAfter) {
+        await ensureClientAndPostSaleWelcomeAsync(clientRepository, taskStore, leadAfter);
+      }
+    }
+
     setIngestionMessage(null);
     resetForm();
     setDialogOpen(false);
@@ -615,16 +650,26 @@ const LeadsPage = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted/50 px-4 py-3 text-sm">
-            <p className="text-muted-foreground">
-              {filteredLeads.length} lead{filteredLeads.length === 1 ? "" : "s"} visibles
-            </p>
-            <p className="text-muted-foreground">
-              Total guardados localmente: <span className="font-medium text-foreground">{leads.length}</span>
-            </p>
-          </div>
+          {isLoadingLeads ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted/50 px-4 py-3 text-sm">
+              <p className="text-muted-foreground">Cargando leads...</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-muted/50 px-4 py-3 text-sm">
+              <p className="text-muted-foreground">
+                {filteredLeads.length} lead{filteredLeads.length === 1 ? "" : "s"} visibles
+              </p>
+              <p className="text-muted-foreground">
+                Total cargados: <span className="font-medium text-foreground">{leads.length}</span>
+              </p>
+            </div>
+          )}
 
-          {filteredLeads.length === 0 ? (
+          {isLoadingLeads ? (
+            <div className="rounded-2xl border border-dashed border-border bg-background px-6 py-10 text-center">
+              <p className="font-semibold text-foreground">Cargando leads...</p>
+            </div>
+          ) : filteredLeads.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-background px-6 py-10 text-center">
               <p className="font-semibold text-foreground">No encontramos leads con ese filtro</p>
               <p className="mt-2 text-sm text-muted-foreground">Prueba con otra busqueda o crea un lead nuevo.</p>

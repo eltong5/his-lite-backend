@@ -27,8 +27,8 @@ const normalizeLeadDraft = (draft: LeadDraft): LeadDraft => ({
   notes: draft.notes?.trim() || undefined,
 });
 
-export const listLeads = (repository: LeadRepository): LeadRow[] => repository.list();
-export const getLeadById = (repository: LeadRepository, leadId: string): LeadRow | undefined => repository.getById(leadId);
+export const listLeads = async (repository: LeadRepository): Promise<LeadRow[]> => repository.list();
+export const getLeadById = async (repository: LeadRepository, leadId: string): Promise<LeadRow | undefined> => repository.getById(leadId);
 
 export const loadLeads = async (repository: LocalStorageLeadRepository): Promise<LeadRow[]> => {
   if (!isSupabaseConfigured) {
@@ -49,7 +49,7 @@ export const loadLeads = async (repository: LocalStorageLeadRepository): Promise
   }
 };
 
-export const createLead = (repository: LeadRepository, draft: LeadDraft): LeadRow[] => {
+export const createLead = async (repository: LeadRepository, draft: LeadDraft): Promise<LeadRow[]> => {
   const nextLead: LeadRow = {
     id: `lead-${Date.now()}`,
     agencyId: draft.agencyId || getCurrentAgency(agencyStore).id,
@@ -82,9 +82,9 @@ export const createLeadAsync = async (repository: LocalStorageLeadRepository, dr
   }
 };
 
-export const updateLead = (repository: LeadRepository, leadId: string, draft: LeadDraft): LeadRow[] => {
-  const currentLeads = repository.list();
-  const currentLead = repository.getById(leadId);
+export const updateLead = async (repository: LeadRepository, leadId: string, draft: LeadDraft): Promise<LeadRow[]> => {
+  const currentLeads = await repository.list();
+  const currentLead = await repository.getById(leadId);
 
   if (!currentLead) {
     return currentLeads;
@@ -129,8 +129,8 @@ export const updateLeadAsync = async (
   }
 };
 
-export const moveLeadToStage = (repository: LeadRepository, leadId: string, stage: LeadRow["stage"]): LeadRow[] => {
-  const currentLead = repository.getById(leadId);
+export const moveLeadToStage = async (repository: LeadRepository, leadId: string, stage: LeadRow["stage"]): Promise<LeadRow[]> => {
+  const currentLead = await repository.getById(leadId);
 
   if (!currentLead) {
     return repository.list();

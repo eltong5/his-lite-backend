@@ -72,7 +72,8 @@ const ClientsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<ClientFormState>(defaultFormState);
   const [errors, setErrors] = useState<Partial<Record<keyof ClientFormState, string>>>({});
-  const [clients, setClients] = useState(() => listClients(clientRepository));
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [isSavingClient, setIsSavingClient] = useState(false);
   const clientHealth = useMemo(() => buildClientHealth(clients), [clients]);
   const upcomingRenewals = useMemo(() => buildUpcomingRenewals(clients), [clients]);
@@ -99,14 +100,23 @@ const ClientsPage = () => {
   useEffect(() => {
     let active = true;
 
-    const syncClients = async () => {
-      const syncedClients = await loadClients(clientRepository);
-      if (active) {
-        setClients(syncedClients);
+    const loadClientsAsync = async () => {
+      setIsLoadingClients(true);
+      try {
+        const syncedClients = await loadClients(clientRepository);
+        if (active) {
+          setClients(syncedClients);
+        }
+      } catch (error) {
+        console.error("Error loading clients:", error);
+      } finally {
+        if (active) {
+          setIsLoadingClients(false);
+        }
       }
     };
 
-    void syncClients();
+    void loadClientsAsync();
 
     return () => {
       active = false;
@@ -339,7 +349,11 @@ const ClientsPage = () => {
             <CardTitle className="mt-1 text-xl">Cartera de clientes</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {clients.length ? (
+            {isLoadingClients ? (
+              <div className="rounded-2xl border border-dashed border-border/80 bg-background p-6 text-sm text-muted-foreground">
+                Cargando clientes...
+              </div>
+            ) : clients.length ? (
               clients.map((client) => (
                 <div key={client.id} className="grid gap-3 rounded-2xl border border-border/80 bg-background p-4 md:grid-cols-[1fr_1fr_0.8fr_0.8fr] md:items-center">
                   <div>

@@ -4,13 +4,13 @@ const STORAGE_KEY = "crm-current-agency";
 const LIST_STORAGE_KEY = "crm-agencies";
 
 const defaultAgency: AgencyRecord = {
-  id: "agency-demo-001",
-  name: "Agencia Seguros Andinos",
-  slug: "seguros-andinos",
-  city: "Bogota",
+  id: "agency-test-001",
+  name: "Agencia de Prueba",
+  slug: "agencia-prueba",
+  city: "Bogotá",
   country: "Colombia",
   plan: "Starter",
-  teamSize: 4,
+  teamSize: 1,
 };
 
 const defaultAgencies: AgencyRecord[] = [

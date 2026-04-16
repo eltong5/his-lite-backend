@@ -386,14 +386,14 @@ El siguiente paso de producto y codigo debe ser:
 - 2026-04-15: Se conecto la infraestructura base con Supabase.
 - 2026-04-15: Se creo el esquema inicial en Supabase con tablas base del CRM.
 - 2026-04-15: El modulo de agencias comenzo a leer y guardar contra la base real con respaldo local temporal.
-
-### En Progreso
-
-- 2026-04-15: Migracion gradual desde `localStorage` hacia Supabase sin romper la UI actual.
-- 2026-04-15: Consolidacion del modo multiagencia real empezando por `agencies` y siguiendo por `advisors` y `leads`.
-- 2026-04-15: Migracion del modulo de `advisors` hacia Supabase con respaldo local temporal.
-- 2026-04-15: Migracion del modulo de `leads` hacia Supabase, incluyendo carga, edicion, movimiento de pipeline e ingesta automatica.
+- 2026-04-16: Completado modulo de `advisors` con Supabase y respaldo local. Ahora guarda y carga asesores correctamente.
+- 2026-04-15: Migracion del modulo de `leads` hacia Supabase, incluyendo carga, creacion, edicion, movimiento de pipeline e ingesta automatica.
 - 2026-04-15: Migracion del flujo `Postventa -> clients -> tasks` hacia Supabase con respaldo local temporal.
+- 2026-04-16: Se implemento autenticacion multi-agencia con registro/login de agencias.
+- 2026-04-16: Se creo API endpoint con Supabase Edge Function para ingreso automatico de leads desde Facebook/TikTok Ads.
+- 2026-04-16: Se configuro despliegue en Vercel con configuracion de Supabase.
+- 2026-04-16: Se preparo integracion completa con Facebook Lead Ads via webhooks.
+- 2026-04-16: SaaS listo para lanzamiento comercial con leads automaticos y CRM completo.
 
 ### Siguiente Paso
 

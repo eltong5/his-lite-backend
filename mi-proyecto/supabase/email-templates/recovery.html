@@ -1,0 +1,62 @@
+<!--
+  Supabase → Authentication → Email Templates → "Reset password"
+  Asunto sugerido: Restablecer contrasena — InsureTech CRM
+-->
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restablecer contrasena</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#0b1220;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0b1220;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background-color:#111827;border-radius:16px;overflow:hidden;border:1px solid #1e293b;">
+            <tr>
+              <td style="padding:28px 32px 8px 32px;">
+                <p style="margin:0;font-size:13px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#5eead4;">InsureTech CRM</p>
+                <h1 style="margin:12px 0 0 0;font-size:24px;line-height:1.25;color:#f8fafc;">Restablecer tu contrasena</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 24px 32px;">
+                <p style="margin:0 0 16px 0;font-size:16px;line-height:1.6;color:#cbd5e1;">
+                  Recibimos una solicitud para la cuenta <strong style="color:#f8fafc;">{{ .Email }}</strong>. Con el boton
+                  siguiente podras elegir una contrasena nueva y volver a entrar al CRM con normalidad.
+                </p>
+                <p style="margin:0 0 24px 0;font-size:16px;line-height:1.6;color:#cbd5e1;">
+                  Por seguridad, este enlace caduca pronto. Si no fuiste tu, puedes ignorar este mensaje.
+                </p>
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto 24px auto;">
+                  <tr>
+                    <td style="border-radius:10px;background:linear-gradient(135deg,#0d9488,#14b8a6);">
+                      <a href="{{ .ConfirmationURL }}" target="_blank" rel="noopener noreferrer"
+                        style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:600;color:#042f2e;text-decoration:none;">
+                        Elegir nueva contrasena
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 8px 0;font-size:13px;line-height:1.5;color:#94a3b8;">
+                  Enlace directo:
+                </p>
+                <p style="margin:0 0 24px 0;font-size:12px;line-height:1.5;word-break:break-all;color:#5eead4;">
+                  {{ .ConfirmationURL }}
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;border-top:1px solid #1e293b;background-color:#0f172a;">
+                <p style="margin:0;font-size:12px;color:#64748b;text-align:center;">
+                  InsureTech CRM
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

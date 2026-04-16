@@ -22,13 +22,12 @@ const agencyStore = new LocalStorageAgencyStore();
 const supabaseAdvisorRepository = new SupabaseAdvisorRepository();
 
 export const loadAdvisors = async (store: LocalStorageAdvisorStore): Promise<AdvisorRecord[]> => {
-  const currentAgencyId = getCurrentAgency(agencyStore).id;
-
   if (!isSupabaseConfigured) {
     return store.list();
   }
 
   try {
+    const currentAgencyId = getCurrentAgency(agencyStore).id;
     const advisors = await supabaseAdvisorRepository.listByAgency(currentAgencyId);
     if (advisors.length === 0) {
       return store.list();
@@ -41,18 +40,21 @@ export const loadAdvisors = async (store: LocalStorageAdvisorStore): Promise<Adv
   }
 };
 
-export const createAdvisor = async (store: LocalStorageAdvisorStore, draft: AdvisorDraft): Promise<AdvisorRecord[]> => {
+export const createAdvisorAsync = async (
+  store: LocalStorageAdvisorStore,
+  draft: AdvisorDraft,
+): Promise<AdvisorRecord[]> => {
   const advisor: AdvisorRecord = {
     id: `advisor-${Date.now()}`,
     fullName: draft.fullName.trim(),
     email: draft.email.trim(),
     phone: draft.phone?.trim() || undefined,
     role: draft.role,
-    agencyId: draft.agencyId,
+    agencyId: draft.agencyId || getCurrentAgency(agencyStore).id,
     active: draft.active,
   };
 
-  const persistLocally = (nextAdvisor: AdvisorRecord) => store.create(nextAdvisor);
+  const persistLocally = (adv: AdvisorRecord) => store.create(adv);
 
   if (!isSupabaseConfigured) {
     return persistLocally(advisor);

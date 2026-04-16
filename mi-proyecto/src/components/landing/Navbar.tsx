@@ -2,9 +2,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Shield, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-ocean-deep/80 backdrop-blur-lg border-b border-ocean-mid/30">
@@ -21,14 +27,33 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/dashboard">
-            <Button variant="ghost" className="text-ocean-surface/80 hover:text-primary-foreground hover:bg-ocean-mid/50">
-              Iniciar sesión
-            </Button>
-          </Link>
-          <Link to="/dashboard">
-            <Button variant="hero" size="sm">Prueba gratis</Button>
-          </Link>
+          {user ? (
+            <>
+              <Link to="/crm">
+                <Button variant="ghost" className="text-ocean-surface/80 hover:text-primary-foreground hover:bg-ocean-mid/50">
+                  Ir al CRM
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                className="text-ocean-surface/80 hover:text-primary-foreground hover:bg-ocean-mid/50"
+                onClick={handleSignOut}
+              >
+                Cerrar sesión
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" className="text-ocean-surface/80 hover:text-primary-foreground hover:bg-ocean-mid/50">
+                  Iniciar sesión
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button variant="hero" size="sm">Prueba gratis</Button>
+              </Link>
+            </>
+          )}
         </div>
 
         <button className="md:hidden text-primary-foreground" onClick={() => setOpen(!open)}>
@@ -41,9 +66,24 @@ const Navbar = () => {
           <a href="#features" className="block text-sm text-ocean-surface/70 py-2">Funciones</a>
           <a href="#pipeline" className="block text-sm text-ocean-surface/70 py-2">Pipeline</a>
           <a href="#pricing" className="block text-sm text-ocean-surface/70 py-2">Precios</a>
-          <Link to="/dashboard">
-            <Button variant="hero" size="sm" className="w-full mt-2">Prueba gratis</Button>
-          </Link>
+          {user ? (
+            <>
+              <Link to="/crm">
+                <Button variant="hero" size="sm" className="w-full mt-2">Ir al CRM</Button>
+              </Link>
+              <Button
+                variant="ghost"
+                className="w-full text-ocean-surface/80"
+                onClick={handleSignOut}
+              >
+                Cerrar sesión
+              </Button>
+            </>
+          ) : (
+            <Link to="/login">
+              <Button variant="hero" size="sm" className="w-full mt-2">Prueba gratis</Button>
+            </Link>
+          )}
         </div>
       )}
     </nav>

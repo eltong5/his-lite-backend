@@ -1,5 +1,7 @@
 import { Client, ClientStatus } from "@/features/clients/clientModel";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 
 type ClientRow = {
   id: string;
@@ -96,5 +98,80 @@ export class SupabaseClientRepository {
     }
 
     return mapClientRow(data as ClientRow);
+  }
+
+  async list(): Promise<Client[]> {
+    const agencyStore = new LocalStorageAgencyStore();
+    const agencyId = getCurrentAgency(agencyStore).id;
+    return this.listByAgency(agencyId);
+  }
+
+  async getById(clientId: string): Promise<Client | undefined> {
+    if (!supabase) {
+      throw new Error("Supabase no esta configurado en el frontend.");
+    }
+
+    const { data, error } = await supabase
+      .from("clients")
+      .select(
+        "id, agency_id, lead_id, advisor_id, advisor_name, full_name, product, policy_number, renewal_date, status, email, phone, city, country, notes, created_at",
+      )
+      .eq("id", clientId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? mapClientRow(data as ClientRow) : undefined;
+  }
+
+  async getBySourceLeadId(sourceLeadId: string): Promise<Client | undefined> {
+    if (!supabase) {
+      throw new Error("Supabase no esta configurado en el frontend.");
+    }
+
+    const { data, error } = await supabase
+      .from("clients")
+      .select(
+        "id, agency_id, lead_id, advisor_id, advisor_name, full_name, product, policy_number, renewal_date, status, email, phone, city, country, notes, created_at",
+      )
+      .eq("lead_id", sourceLeadId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? mapClientRow(data as ClientRow) : undefined;
+  }
+
+  async create(client: Client): Promise<Client[]> {
+    const savedClient = await this.save(client);
+    const allClients = await this.list();
+    return allClients.map(c => c.id === savedClient.id ? savedClient : c);
+  }
+
+  async update(clientId: string, client: Client): Promise<Client[]> {
+    const savedClient = await this.save(client);
+    const allClients = await this.list();
+    return allClients.map(c => c.id === savedClient.id ? savedClient : c);
+  }
+
+  async delete(clientId: string): Promise<Client[]> {
+    if (!supabase) {
+      throw new Error("Supabase no esta configurado en el frontend.");
+    }
+
+    const { error } = await supabase
+      .from("clients")
+      .delete()
+      .eq("id", clientId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return this.list();
   }
 }

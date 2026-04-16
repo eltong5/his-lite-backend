@@ -22,10 +22,10 @@ export type ExternalLeadPayload = {
   notes?: string;
 };
 
-export const ingestLead = (
+export const ingestLead = async (
   repository: LeadRepository,
   payload: ExternalLeadPayload,
-): { leads: LeadRow[]; duplicate: boolean; createdLead?: LeadRow } => {
+): Promise<{ leads: LeadRow[]; duplicate: boolean; createdLead?: LeadRow }> => {
   const name = payload.name?.trim();
   const phone = payload.phone?.trim();
   const product = payload.product?.trim();
@@ -36,11 +36,11 @@ export const ingestLead = (
   }
 
   if (externalLeadId) {
-    const existingLead = repository.getByExternalLeadId(externalLeadId);
+    const existingLead = await repository.getByExternalLeadId(externalLeadId);
 
     if (existingLead) {
       return {
-        leads: repository.list(),
+        leads: await repository.list(),
         duplicate: true,
         createdLead: existingLead,
       };
@@ -67,7 +67,7 @@ export const ingestLead = (
     notes: payload.notes?.trim() || undefined,
   };
 
-  const leads = repository.create(nextLead);
+  const leads = await repository.create(nextLead);
 
   return {
     leads,

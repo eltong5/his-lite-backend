@@ -53,33 +53,33 @@ export class LocalStorageTaskRepository implements TaskRepository {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
   }
 
-  list(): CrmTask[] {
+  async list(): Promise<CrmTask[]> {
     return this.readTasks();
   }
 
-  getById(taskId: string): CrmTask | undefined {
+  async getById(taskId: string): Promise<CrmTask | undefined> {
     return this.readTasks().find((task) => task.id === taskId);
   }
 
-  create(task: CrmTask): CrmTask[] {
+  async create(task: CrmTask): Promise<CrmTask[]> {
     const nextTasks = [task, ...this.readTasks()];
     this.writeTasks(nextTasks);
     return nextTasks;
   }
 
-  update(taskId: string, nextTask: CrmTask): CrmTask[] {
+  async update(taskId: string, nextTask: CrmTask): Promise<CrmTask[]> {
     const nextTasks = this.readTasks().map((task) => (task.id === taskId ? nextTask : task));
     this.writeTasks(nextTasks);
     return nextTasks;
   }
 
-  delete(taskId: string): CrmTask[] {
+  async delete(taskId: string): Promise<CrmTask[]> {
     const nextTasks = this.readTasks().filter((task) => task.id !== taskId);
     this.writeTasks(nextTasks);
     return nextTasks;
   }
 
-  complete(taskId: string): CrmTask[] {
+  async complete(taskId: string): Promise<CrmTask[]> {
     const nextTasks = this.readTasks().filter((task) => task.id !== taskId);
     this.writeTasks(nextTasks);
     return nextTasks;

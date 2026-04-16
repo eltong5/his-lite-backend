@@ -28,7 +28,7 @@ const normalizeClientDraft = (draft: ClientDraft): ClientDraft => ({
   notes: draft.notes?.trim() || undefined,
 });
 
-export const listClients = (repository: ClientRepository): Client[] => repository.list();
+export const listClients = async (repository: ClientRepository): Promise<Client[]> => repository.list();
 
 export const loadClients = async (repository: LocalStorageClientRepository): Promise<Client[]> => {
   if (!isSupabaseConfigured) {
@@ -49,7 +49,7 @@ export const loadClients = async (repository: LocalStorageClientRepository): Pro
   }
 };
 
-export const createClient = (repository: ClientRepository, draft: ClientDraft): Client[] => {
+export const createClient = async (repository: ClientRepository, draft: ClientDraft): Promise<Client[]> => {
   const normalizedDraft = normalizeClientDraft(draft);
   const nextClient: Client = {
     id: `client-${Date.now()}`,
@@ -87,8 +87,8 @@ export const createClientAsync = async (
   }
 };
 
-export const ensureClientFromLead = (repository: ClientRepository, lead: LeadRow): Client[] => {
-  const existingClient = repository.getBySourceLeadId(lead.id);
+export const ensureClientFromLead = async (repository: ClientRepository, lead: LeadRow): Promise<Client[]> => {
+  const existingClient = await repository.getBySourceLeadId(lead.id);
 
   if (existingClient) {
     return repository.list();

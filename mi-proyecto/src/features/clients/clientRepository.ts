@@ -1,10 +1,10 @@
 import { Client } from "./clientModel";
 
 export interface ClientRepository {
-  list(): Client[];
-  getById(clientId: string): Client | undefined;
-  getBySourceLeadId(sourceLeadId: string): Client | undefined;
-  create(client: Client): Client[];
-  update(clientId: string, client: Client): Client[];
-  delete(clientId: string): Client[];
+  list(): Promise<Client[]>;
+  getById(clientId: string): Promise<Client | undefined>;
+  getBySourceLeadId(sourceLeadId: string): Promise<Client | undefined>;
+  create(client: Client): Promise<Client[]>;
+  update(clientId: string, client: Client): Promise<Client[]>;
+  delete(clientId: string): Promise<Client[]>;
 }

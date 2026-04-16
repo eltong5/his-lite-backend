@@ -1,5 +1,7 @@
 import { CrmTaskRecord, TaskChannel, TaskEntityType, TaskStatus } from "@/features/tasks/taskModel";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 
 type TaskRow = {
   id: string;
@@ -96,5 +98,70 @@ export class SupabaseTaskRepository {
     }
 
     return mapTaskRow(data as TaskRow);
+  }
+
+  async list(): Promise<CrmTaskRecord[]> {
+    const agencyStore = new LocalStorageAgencyStore();
+    const agencyId = getCurrentAgency(agencyStore).id;
+    return this.listByAgency(agencyId);
+  }
+
+  async getById(taskId: string): Promise<CrmTaskRecord | undefined> {
+    if (!supabase) {
+      throw new Error("Supabase no esta configurado en el frontend.");
+    }
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .select(
+        "id, agency_id, advisor_id, lead_id, client_id, title, due_at, urgent, subject_name, stage, advisor_name, channel, status, entity_type, notes, created_at",
+      )
+      .eq("id", taskId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? mapTaskRow(data as TaskRow) : undefined;
+  }
+
+  async create(task: CrmTaskRecord): Promise<CrmTaskRecord[]> {
+    const savedTask = await this.save(task);
+    const allTasks = await this.list();
+    return allTasks.map(t => t.id === savedTask.id ? savedTask : t);
+  }
+
+  async update(taskId: string, task: CrmTaskRecord): Promise<CrmTaskRecord[]> {
+    const savedTask = await this.save(task);
+    const allTasks = await this.list();
+    return allTasks.map(t => t.id === savedTask.id ? savedTask : t);
+  }
+
+  async delete(taskId: string): Promise<CrmTaskRecord[]> {
+    if (!supabase) {
+      throw new Error("Supabase no esta configurado en el frontend.");
+    }
+
+    const { error } = await supabase
+      .from("tasks")
+      .delete()
+      .eq("id", taskId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return this.list();
+  }
+
+  async complete(taskId: string): Promise<CrmTaskRecord[]> {
+    const task = await this.getById(taskId);
+    if (!task) {
+      return this.list();
+    }
+
+    const updatedTask = { ...task, status: "Completada" as const };
+    return this.update(taskId, updatedTask);
   }
 }

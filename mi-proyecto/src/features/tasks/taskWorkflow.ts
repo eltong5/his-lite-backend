@@ -1,7 +1,12 @@
 import { Client } from "@/features/clients/clientModel";
 import { CrmTaskRecord, TaskChannel } from "@/features/tasks/taskModel";
 import { LocalCrmTaskStore } from "@/features/tasks/taskStore";
+import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { LeadRow } from "@/lib/crm-data";
+
+export const POST_SALE_WELCOME_TITLE = "Programar bienvenida de postventa";
+
+export const postSaleWelcomeTaskId = (clientId: string): string => `task-${clientId}-welcome`;
 
 const getTaskChannel = (lead: LeadRow): TaskChannel => {
   if (lead.source === "WhatsApp" || lead.phone) {
@@ -19,7 +24,7 @@ const getTaskChannel = (lead: LeadRow): TaskChannel => {
   return "CRM";
 };
 
-export const listStoredTasks = (store: LocalCrmTaskStore): CrmTaskRecord[] => store.list();
+export const listStoredTasks = async (store: LocalCrmTaskStore): Promise<CrmTaskRecord[]> => store.syncFromSupabase();
 
 export const buildLeadTasks = (leads: LeadRow[]): CrmTaskRecord[] =>
   [...leads]
@@ -41,10 +46,19 @@ export const buildLeadTasks = (leads: LeadRow[]): CrmTaskRecord[] =>
       createdAt: lead.createdAt ?? new Date().toISOString(),
     }));
 
-export const ensurePostSaleTask = (store: LocalCrmTaskStore, client: Client): CrmTaskRecord[] => {
-  const existingTask = store.getByClientId(client.id).find((task) => task.title === "Programar bienvenida de postventa");
+const hasPostSaleWelcomeTask = (store: LocalCrmTaskStore, client: Client): boolean => {
+  const targetId = postSaleWelcomeTaskId(client.id);
+  return store
+    .list()
+    .some(
+      (task) =>
+        task.id === targetId ||
+        (task.clientId === client.id && task.title === POST_SALE_WELCOME_TITLE && task.entityType === "client"),
+    );
+};
 
-  if (existingTask) {
+export const ensurePostSaleTask = (store: LocalCrmTaskStore, client: Client): CrmTaskRecord[] => {
+  if (hasPostSaleWelcomeTask(store, client)) {
     return store.list();
   }
 
@@ -53,9 +67,9 @@ export const ensurePostSaleTask = (store: LocalCrmTaskStore, client: Client): Cr
   dueAt.setHours(9, 0, 0, 0);
 
   return store.create({
-    id: `task-${client.id}-welcome`,
+    id: postSaleWelcomeTaskId(client.id),
     agencyId: client.agencyId,
-    title: "Programar bienvenida de postventa",
+    title: POST_SALE_WELCOME_TITLE,
     dueAt: dueAt.toISOString(),
     urgent: true,
     subjectName: client.fullName,
@@ -72,9 +86,11 @@ export const ensurePostSaleTask = (store: LocalCrmTaskStore, client: Client): Cr
 };
 
 export const ensurePostSaleTaskAsync = async (store: LocalCrmTaskStore, client: Client): Promise<CrmTaskRecord[]> => {
-  const existingTask = store.getByClientId(client.id).find((task) => task.title === "Programar bienvenida de postventa");
+  if (isSupabaseConfigured) {
+    await store.syncFromSupabase();
+  }
 
-  if (existingTask) {
+  if (hasPostSaleWelcomeTask(store, client)) {
     return store.list();
   }
 
@@ -83,9 +99,9 @@ export const ensurePostSaleTaskAsync = async (store: LocalCrmTaskStore, client: 
   dueAt.setHours(9, 0, 0, 0);
 
   return store.createAsync({
-    id: `task-${client.id}-welcome`,
+    id: postSaleWelcomeTaskId(client.id),
     agencyId: client.agencyId,
-    title: "Programar bienvenida de postventa",
+    title: POST_SALE_WELCOME_TITLE,
     dueAt: dueAt.toISOString(),
     urgent: true,
     subjectName: client.fullName,

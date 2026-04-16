@@ -1,5 +1,7 @@
 import { LeadRow } from "@/lib/crm-data";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentAgency } from "@/features/agencies/agencyService";
+import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
 
 type LeadRowDb = {
   id: string;
@@ -123,5 +125,49 @@ export class SupabaseLeadRepository {
     }
 
     return data ? mapDbRowToLead(data as LeadRowDb) : undefined;
+  }
+
+  async list(): Promise<LeadRow[]> {
+    const agencyStore = new LocalStorageAgencyStore();
+    const agencyId = getCurrentAgency(agencyStore).id;
+    return this.listByAgency(agencyId);
+  }
+
+  async getById(leadId: string): Promise<LeadRow | undefined> {
+    if (!supabase) {
+      throw new Error("Supabase no esta configurado en el frontend.");
+    }
+
+    const { data, error } = await supabase
+      .from("leads")
+      .select(
+        "id, agency_id, advisor_id, name, product, source, stage, advisor_name, next_step, email, phone, city, country, age, campaign_name, external_lead_id, notes, created_at",
+      )
+      .eq("id", leadId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? mapDbRowToLead(data as LeadRowDb) : undefined;
+  }
+
+  async getByExternalLeadId(externalLeadId: string): Promise<LeadRow | undefined> {
+    const agencyStore = new LocalStorageAgencyStore();
+    const agencyId = getCurrentAgency(agencyStore).id;
+    return this.findByExternalLeadId(agencyId, externalLeadId);
+  }
+
+  async create(lead: LeadRow): Promise<LeadRow[]> {
+    const savedLead = await this.save(lead);
+    const allLeads = await this.list();
+    return allLeads.map(l => l.id === savedLead.id ? savedLead : l);
+  }
+
+  async update(leadId: string, lead: LeadRow): Promise<LeadRow[]> {
+    const savedLead = await this.save(lead);
+    const allLeads = await this.list();
+    return allLeads.map(l => l.id === savedLead.id ? savedLead : l);
   }
 }

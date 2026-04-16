@@ -88,36 +88,36 @@ export class LocalStorageClientRepository implements ClientRepository {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...otherAgencyClients, ...clients]));
   }
 
-  list(): Client[] {
+  async list(): Promise<Client[]> {
     return this.readClients();
   }
 
-  getById(clientId: string): Client | undefined {
+  async getById(clientId: string): Promise<Client | undefined> {
     return this.readClients().find((client) => client.id === clientId);
   }
 
-  getBySourceLeadId(sourceLeadId: string): Client | undefined {
+  async getBySourceLeadId(sourceLeadId: string): Promise<Client | undefined> {
     return this.readClients().find((client) => client.sourceLeadId === sourceLeadId);
   }
 
-  create(client: Client): Client[] {
+  async create(client: Client): Promise<Client[]> {
     const nextClients = [client, ...this.readClients()];
     this.writeClients(nextClients);
     return nextClients;
   }
 
-  saveAll(clients: Client[]): Client[] {
+  async saveAll(clients: Client[]): Promise<Client[]> {
     this.writeClients(clients);
     return clients;
   }
 
-  update(clientId: string, nextClient: Client): Client[] {
+  async update(clientId: string, nextClient: Client): Promise<Client[]> {
     const nextClients = this.readClients().map((client) => (client.id === clientId ? nextClient : client));
     this.writeClients(nextClients);
     return nextClients;
   }
 
-  delete(clientId: string): Client[] {
+  async delete(clientId: string): Promise<Client[]> {
     const nextClients = this.readClients().filter((client) => client.id !== clientId);
     this.writeClients(nextClients);
     return nextClients;

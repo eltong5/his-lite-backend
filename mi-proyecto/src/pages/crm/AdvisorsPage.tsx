@@ -13,11 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AdvisorRole } from "@/features/advisors/advisorModel";
-import { createAdvisor, listAdvisors, loadAdvisors } from "@/features/advisors/advisorService";
-import { LocalStorageAdvisorStore } from "@/features/advisors/localStorageAdvisorStore";
+import { AdvisorRecord, AdvisorRole } from "@/features/advisors/advisorModel";
 import { getCurrentAgency } from "@/features/agencies/agencyService";
 import { LocalStorageAgencyStore } from "@/features/agencies/localStorageAgencyStore";
+import { LocalStorageAdvisorStore } from "@/features/advisors/localStorageAdvisorStore";
+import { createAdvisorAsync, loadAdvisors } from "@/features/advisors/advisorService";
 
 const advisorStore = new LocalStorageAdvisorStore();
 const agencyStore = new LocalStorageAgencyStore();
@@ -39,7 +39,7 @@ const defaultFormState: AdvisorFormState = {
 
 const AdvisorsPage = () => {
   const currentAgency = getCurrentAgency(agencyStore);
-  const [advisors, setAdvisors] = useState(() => listAdvisors(advisorStore));
+  const [advisors, setAdvisors] = useState<AdvisorRecord[]>([]);
   const [form, setForm] = useState<AdvisorFormState>(defaultFormState);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof AdvisorFormState, string>>>({});
@@ -49,17 +49,26 @@ const AdvisorsPage = () => {
   useEffect(() => {
     let active = true;
 
-    const syncAdvisors = async () => {
-      const syncedAdvisors = await loadAdvisors(advisorStore);
-      if (!active) {
-        return;
+    const loadAdvisorsAsync = async () => {
+      setIsLoadingAdvisors(true);
+      try {
+        const advisors = await loadAdvisors(advisorStore);
+        if (active) {
+          setAdvisors(advisors);
+        }
+      } catch (error) {
+        console.error("Error loading advisors:", error);
+        if (active) {
+          setSavedMessage("Error al cargar asesores. Verifica la conexión a la base de datos.");
+        }
+      } finally {
+        if (active) {
+          setIsLoadingAdvisors(false);
+        }
       }
-
-      setAdvisors(syncedAdvisors);
-      setIsLoadingAdvisors(false);
     };
 
-    void syncAdvisors();
+    void loadAdvisorsAsync();
 
     return () => {
       active = false;
@@ -91,20 +100,27 @@ const AdvisorsPage = () => {
     }
 
     setIsSavingAdvisor(true);
-    const nextAdvisors = await createAdvisor(advisorStore, {
-        fullName: form.fullName,
-        email: form.email,
-        phone: form.phone || undefined,
+    try {
+      const draft = {
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phone: form.phone?.trim() || undefined,
         role: form.role,
         agencyId: currentAgency.id,
         active: true,
-      });
+      };
 
-    setAdvisors(nextAdvisors);
+      const updatedAdvisors = await createAdvisorAsync(advisorStore, draft);
+      setAdvisors(updatedAdvisors);
 
-    setSavedMessage("Asesor creado. Ya queda disponible para asignar leads y clientes.");
-    setForm(defaultFormState);
-    setIsSavingAdvisor(false);
+      setSavedMessage("Asesor creado. Ya queda disponible para asignar leads y clientes.");
+      setForm(defaultFormState);
+    } catch (error) {
+      console.error("Error creating advisor:", error);
+      setSavedMessage("Error al crear asesor. Verifica la conexión a la base de datos.");
+    } finally {
+      setIsSavingAdvisor(false);
+    }
   };
 
   return (

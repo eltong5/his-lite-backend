@@ -1,5 +1,6 @@
 import { ArrowRight, CircleAlert, Clock3, FileText, TrendingUp, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { CrmShell } from "@/components/crm/CrmShell";
 import { Badge } from "@/components/ui/badge";
@@ -20,19 +21,30 @@ const statIcons = [Users, FileText, TrendingUp, CircleAlert];
 const leadRepository = new LocalStorageLeadRepository();
 
 const DashboardPage = () => {
-  const [leads] = useState<LeadRow[]>(() => listLeads(leadRepository));
-  const [syncedLeads, setSyncedLeads] = useState<LeadRow[]>(() => listLeads(leadRepository));
+  const [syncedLeads, setSyncedLeads] = useState<LeadRow[]>([]);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(true);
+  const navigate = useNavigate();
+
   useEffect(() => {
     let active = true;
 
-    const syncLeads = async () => {
-      const nextLeads = await loadLeads(leadRepository);
-      if (active) {
-        setSyncedLeads(nextLeads);
+    const loadLeadsAsync = async () => {
+      setIsLoadingLeads(true);
+      try {
+        const nextLeads = await loadLeads(leadRepository);
+        if (active) {
+          setSyncedLeads(nextLeads);
+        }
+      } catch (error) {
+        console.error("Error loading leads:", error);
+      } finally {
+        if (active) {
+          setIsLoadingLeads(false);
+        }
       }
     };
 
-    void syncLeads();
+    void loadLeadsAsync();
 
     return () => {
       active = false;
@@ -53,9 +65,36 @@ const DashboardPage = () => {
       flowLabel="Vision ejecutiva del embudo"
       channelsLabel="Resumen del CRM en tiempo real"
       statusLabel="Dashboard conectado"
+      onAction={() => navigate('/crm/leads')}
     >
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat, index) => {
+      {isLoadingLeads ? (
+        <div className="rounded-2xl border border-dashed border-border bg-background px-6 py-10 text-center">
+          <p className="font-semibold text-foreground">Cargando dashboard...</p>
+        </div>
+      ) : (
+        <>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {isLoadingLeads
+          ? Array.from({ length: 4 }, (_, index) => {
+              const Icon = statIcons[index];
+              return (
+                <Card key={index} className="border-0 bg-card shadow-card">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Cargando...</p>
+                      <CardTitle className="mt-2 text-3xl">--</CardTitle>
+                    </div>
+                    <div className="rounded-2xl bg-primary/10 p-3 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">Cargando datos...</p>
+                  </CardContent>
+                </Card>
+              );
+            })
+          : stats.map((stat, index) => {
           const Icon = statIcons[index];
 
           return (
@@ -147,7 +186,9 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
         </div>
-      </section>
+        </section>
+        </>
+      )}
     </CrmShell>
   );
 };
