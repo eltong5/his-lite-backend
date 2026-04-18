@@ -8,13 +8,20 @@ export const getCurrentAgency = (store: LocalStorageAgencyStore): AgencyRecord =
 
 const supabaseAgencyRepository = new SupabaseAgencyRepository();
 
+const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]) as Promise<T>;
+};
+
 export const loadAgencies = async (store: LocalStorageAgencyStore): Promise<AgencyRecord[]> => {
   if (!isSupabaseConfigured) {
     return store.list();
   }
 
   try {
-    const agencies = await supabaseAgencyRepository.list();
+    const agencies = await withTimeout(supabaseAgencyRepository.list(), 8000);
     if (agencies.length === 0) {
       return store.list();
     }
@@ -26,7 +33,8 @@ export const loadAgencies = async (store: LocalStorageAgencyStore): Promise<Agen
     store.saveCurrent(syncedCurrentAgency);
 
     return agencies;
-  } catch {
+  } catch (error) {
+    console.error("Error loading agencies:", error);
     return store.list();
   }
 };

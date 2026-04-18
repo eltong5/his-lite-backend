@@ -38,32 +38,41 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
     const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (cancelled) {
+      if (!isSupabaseConfigured || !supabase) {
+        setLoading(false);
         return;
       }
-      const nextUser = session?.user ?? null;
-      setUser(nextUser);
-      if (nextUser) {
-        await hydrateAgencyFromProfile(nextUser.id);
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        clearTimeout(timeoutId);
+
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+        if (nextUser) {
+          await hydrateAgencyFromProfile(nextUser.id);
+        }
+      } catch (error) {
+        console.error("Auth init error:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     void init();
+
+    if (!supabase) {
+      return;
+    }
 
     const {
       data: { subscription },
@@ -83,7 +92,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
 
     return () => {
-      cancelled = true;
       subscription.unsubscribe();
     };
   }, []);

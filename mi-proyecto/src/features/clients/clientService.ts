@@ -9,6 +9,13 @@ import { isSupabaseConfigured } from "@/integrations/supabase/client";
 const agencyStore = new LocalStorageAgencyStore();
 const supabaseClientRepository = new SupabaseClientRepository();
 
+const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]) as Promise<T>;
+};
+
 export const buildClientsFromLeads = (leads: LeadRow[]): Client[] =>
   leads.filter((lead) => lead.stage === "Postventa").map(buildClientFromLead);
 
@@ -37,14 +44,15 @@ export const loadClients = async (repository: LocalStorageClientRepository): Pro
 
   try {
     const agencyId = getCurrentAgency(agencyStore).id;
-    const clients = await supabaseClientRepository.listByAgency(agencyId);
+    const clients = await withTimeout(supabaseClientRepository.listByAgency(agencyId), 8000);
     if (clients.length === 0) {
       return repository.list();
     }
 
     repository.saveAll(clients);
     return clients;
-  } catch {
+  } catch (error) {
+    console.error("Error loading clients:", error);
     return repository.list();
   }
 };

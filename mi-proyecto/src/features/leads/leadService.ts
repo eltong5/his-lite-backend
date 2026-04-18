@@ -12,6 +12,13 @@ export type LeadDraft = Omit<LeadRow, "id" | "createdAt" | "agencyId"> & {
 const agencyStore = new LocalStorageAgencyStore();
 const supabaseLeadRepository = new SupabaseLeadRepository();
 
+const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]) as Promise<T>;
+};
+
 const normalizeLeadDraft = (draft: LeadDraft): LeadDraft => ({
   ...draft,
   name: draft.name.trim(),
@@ -37,14 +44,15 @@ export const loadLeads = async (repository: LocalStorageLeadRepository): Promise
 
   try {
     const agencyId = getCurrentAgency(agencyStore).id;
-    const leads = await supabaseLeadRepository.listByAgency(agencyId);
+    const leads = await withTimeout(supabaseLeadRepository.listByAgency(agencyId), 8000);
     if (leads.length === 0) {
       return repository.list();
     }
 
     repository.saveAll(leads);
     return leads;
-  } catch {
+  } catch (error) {
+    console.error("Error loading leads:", error);
     return repository.list();
   }
 };

@@ -21,6 +21,13 @@ export const listActiveAdvisorNames = (store: LocalStorageAdvisorStore): string[
 const agencyStore = new LocalStorageAgencyStore();
 const supabaseAdvisorRepository = new SupabaseAdvisorRepository();
 
+const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]) as Promise<T>;
+};
+
 export const loadAdvisors = async (store: LocalStorageAdvisorStore): Promise<AdvisorRecord[]> => {
   if (!isSupabaseConfigured) {
     return store.list();
@@ -28,14 +35,15 @@ export const loadAdvisors = async (store: LocalStorageAdvisorStore): Promise<Adv
 
   try {
     const currentAgencyId = getCurrentAgency(agencyStore).id;
-    const advisors = await supabaseAdvisorRepository.listByAgency(currentAgencyId);
+    const advisors = await withTimeout(supabaseAdvisorRepository.listByAgency(currentAgencyId), 8000);
     if (advisors.length === 0) {
       return store.list();
     }
 
     store.saveAll(advisors);
     return advisors;
-  } catch {
+  } catch (error) {
+    console.error("Error loading advisors:", error);
     return store.list();
   }
 };

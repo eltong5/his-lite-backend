@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { isSupabaseConfigured } from '@/integrations/supabase/client'
@@ -9,14 +9,30 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth()
+  const [showFallback, setShowFallback] = useState(false)
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return
+    }
+    
+    const timer = setTimeout(() => {
+      setShowFallback(true)
+    }, 3000)
+    
+    return () => clearTimeout(timer)
+  }, [])
 
   if (!isSupabaseConfigured) {
-    // No auth required when Supabase not configured
     return <>{children}</>
   }
 
-  if (loading) {
+  if (loading && !showFallback) {
     return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
+  }
+
+  if (loading && showFallback) {
+    return <>{children}</>
   }
 
   if (!user) {

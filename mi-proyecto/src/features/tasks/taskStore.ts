@@ -8,6 +8,13 @@ const STORAGE_KEY = "crm-tasks-v2";
 const agencyStore = new LocalStorageAgencyStore();
 const supabaseTaskRepository = new SupabaseTaskRepository();
 
+const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+  );
+  return Promise.race([promise, timeout]) as Promise<T>;
+};
+
 const defaultTasks: CrmTaskRecord[] = [
   {
     id: "task-client-welcome",
@@ -117,14 +124,15 @@ export class LocalCrmTaskStore {
 
     try {
       const agencyId = this.getCurrentAgencyId();
-      const tasks = await supabaseTaskRepository.listByAgency(agencyId);
+      const tasks = await withTimeout(supabaseTaskRepository.listByAgency(agencyId), 8000);
       if (tasks.length === 0) {
         return this.list();
       }
 
       this.saveAll(tasks);
       return tasks;
-    } catch {
+    } catch (error) {
+      console.error("Error syncing tasks from Supabase:", error);
       return this.list();
     }
   }
