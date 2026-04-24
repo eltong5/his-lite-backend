@@ -141,7 +141,7 @@ CREATE TABLE medical_records (
     record_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     chief_complaint TEXT,
     vital_signs JSONB, -- { blood_pressure, heart_rate, temperature, weight, height }
-    diagnosis ICD10_CODE VARCHAR(20),
+    diagnosis_code VARCHAR(20),
     diagnosis_description TEXT,
     treatment_plan TEXT,
     prescriptions JSONB, -- Array of prescriptions
@@ -306,9 +306,14 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Clinics: users see own clinic" ON clinics
     USING (id = (SELECT clinic_id FROM profiles WHERE id = auth.uid()));
 
--- Profiles: Users can read all profiles in their clinic
-CREATE POLICY "Profiles: read within clinic" ON profiles
-    USING (clinic_id = (SELECT clinic_id FROM profiles WHERE id = auth.uid()));
+-- Profiles: Users can read all profiles in their clinic or their own
+CREATE POLICY "Profiles: read own and within clinic" ON profiles
+    FOR SELECT
+    USING (
+        id = auth.uid() 
+        OR 
+        clinic_id = (SELECT clinic_id FROM profiles WHERE id = auth.uid())
+    );
 
 -- Profiles: Users can insert their own profile during registration
 CREATE POLICY "Profiles: insert own profile" ON profiles

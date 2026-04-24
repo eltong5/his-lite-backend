@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test de Conexión Supabase</h1>
+    <div id="results"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://zmnjurjgtdtwicdbghcu.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inptbmp1cmpndGR0d2ljZGJnaGN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzODU0OTgsImV4cCI6MjA5MTk2MTQ5OH0.EpTVZ-xE7Nu6ShfDjnY8XbvnfisFjNccDPIFTMbNK5A'
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+        const results = document.getElementById('results')
+        
+        function log(message, isError = false) {
+            const div = document.createElement('div')
+            div.style.color = isError ? 'red' : 'green'
+            div.style.margin = '5px'
+            div.textContent = message
+            results.appendChild(div)
+            console.log(message)
+        }
+        
+        async function testConnection() {
+            log('🔍 Iniciando pruebas de conexión a Supabase...')
+            
+            // Test 1: Verificar si podemos conectarnos
+            try {
+                const { data, error } = await supabase.from('clinics').select('id, name').limit(1)
+                if (error) {
+                    log(`❌ Error conectando a clinics: ${error.message}`, true)
+                } else {
+                    log(`✅ Conexión exitosa. Clinics encontradas: ${data.length}`)
+                }
+            } catch (err) {
+                log(`❌ Error crítico en conexión: ${err.message}`, true)
+                return
+            }
+            
+            // Test 2: Verificar si la tabla profiles existe
+            try {
+                const { data, error } = await supabase.from('profiles').select('id, role').limit(1)
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        log(`❌ La tabla 'profiles' no existe en la base de datos`, true)
+                    } else {
+                        log(`❌ Error consultando profiles: ${error.message}`, true)
+                    }
+                } else {
+                    log(`✅ Tabla profiles existe. Perfiles encontrados: ${data.length}`)
+                }
+            } catch (err) {
+                log(`❌ Error verificando tabla profiles: ${err.message}`, true)
+            }
+            
+            // Test 3: Verificar si la función RPC existe
+            try {
+                const { data, error } = await supabase.rpc('create_user_profile', {
+                    user_id: '00000000-0000-0000-0000-000000000000',
+                    user_first_name: 'test',
+                    user_last_name: 'test',
+                    user_role: 'patient',
+                    user_clinic_id: '00000000-0000-0000-0000-000000000001'
+                })
+                if (error) {
+                    if (error.message.includes('function') && error.message.includes('does not exist')) {
+                        log(`❌ La función 'create_user_profile' no existe`, true)
+                    } else {
+                        log(`⚠️ Función existe pero dio error (esperado para UUID inválido): ${error.message}`)
+                    }
+                } else {
+                    log(`✅ Función create_user_profile ejecutada correctamente`)
+                }
+            } catch (err) {
+                log(`❌ Error verificando función RPC: ${err.message}`, true)
+            }
+            
+            // Test 4: Verificar políticas RLS
+            try {
+                const { data, error } = await supabase.from('profiles').select('*').limit(1)
+                if (error) {
+                    log(`⚠️ Las políticas RLS están activas (esperado sin auth): ${error.message}`)
+                } else {
+                    log(`⚠️ Las políticas RLS podrían no estar configuradas correctamente`)
+                }
+            } catch (err) {
+                log(`❌ Error verificando RLS: ${err.message}`, true)
+            }
+            
+            log('🏁 Pruebas completadas. Revisa los resultados arriba.')
+        }
+        
+        // Ejecutar pruebas automáticamente
+        testConnection()
+    </script>
+</body>
+</html>

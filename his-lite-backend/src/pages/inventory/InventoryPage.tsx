@@ -83,15 +83,7 @@ export const InventoryPage = () => {
             <DialogTrigger asChild><Button variant="outline"><Plus className="mr-2 h-4 w-4" />Nuevo Medicamento</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nuevo Medicamento</DialogTitle></DialogHeader>
-              <form onSubmit={useForm<MedicationFormData>({ resolver: zodResolver(medicationSchema) }).handleSubmit((data) => createMedication.mutate({ ...data, clinic_id: user?.clinic_id || '' }))} className="space-y-4">
-                <div className="space-y-2"><Label>Nombre</Label><Input {...useForm<MedicationFormData>({ resolver: zodResolver(medicationSchema) }).register('name')} /></div>
-                <div className="space-y-2"><Label>Nombre Genérico</Label><Input {...useForm<MedicationFormData>().register('generic_name')} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Categoría</Label><Input {...useForm<MedicationFormData>().register('category')} /></div>
-                  <div className="space-y-2"><Label>Unidad</Label><Input {...useForm<MedicationFormData>().register('unit')} placeholder="ej. tabletas" /></div>
-                </div>
-                <Button type="submit" className="w-full">Crear</Button>
-              </form>
+              <MedicationForm onSubmit={(data) => createMedication.mutate({ ...data, clinic_id: user?.clinic_id || '' })} />
             </DialogContent>
           </Dialog>
           <Dialog open={invOpen} onOpenChange={setInvOpen}>
@@ -167,8 +159,50 @@ export const InventoryPage = () => {
   )
 }
 
+const MedicationForm = ({ onSubmit }: { onSubmit: (data: MedicationFormData) => void }) => {
+  const { register, handleSubmit, formState: { errors } } = useForm<MedicationFormData>({
+    resolver: zodResolver(medicationSchema),
+    defaultValues: { min_stock_level: 10 }
+  })
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Nombre</Label>
+        <Input {...register('name')} />
+        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label>Nombre Genérico</Label>
+        <Input {...register('generic_name')} />
+        {errors.generic_name && <p className="text-sm text-destructive">{errors.generic_name.message}</p>}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Categoría</Label>
+          <Input {...register('category')} />
+          {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Unidad</Label>
+          <Input {...register('unit')} placeholder="ej. tabletas" />
+          {errors.unit && <p className="text-sm text-destructive">{errors.unit.message}</p>}
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Stock Mínimo</Label>
+        <Input type="number" {...register('min_stock_level', { valueAsNumber: true })} />
+        {errors.min_stock_level && <p className="text-sm text-destructive">{errors.min_stock_level.message}</p>}
+      </div>
+      <Button type="submit" className="w-full">Crear</Button>
+    </form>
+  )
+}
+
 const InventoryForm = ({ medications, onSubmit }: { medications: any[], onSubmit: (data: InventoryFormData) => void }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm<InventoryFormData>({ resolver: zodResolver(inventorySchema) })
+  const { register, handleSubmit, formState: { errors } } = useForm<InventoryFormData>({ 
+    resolver: zodResolver(inventorySchema) 
+  })
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -178,16 +212,37 @@ const InventoryForm = ({ medications, onSubmit }: { medications: any[], onSubmit
           <option value="">Seleccionar</option>
           {medications.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
+        {errors.medication_id && <p className="text-sm text-destructive">{errors.medication_id.message}</p>}
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2"><Label>Cantidad</Label><Input type="number" {...register('quantity', { valueAsNumber: true })} /></div>
-        <div className="space-y-2"><Label>Costo Unitario</Label><Input type="number" step="0.01" {...register('unit_cost', { valueAsNumber: true })} /></div>
+        <div className="space-y-2">
+          <Label>Cantidad</Label>
+          <Input type="number" {...register('quantity', { valueAsNumber: true })} />
+          {errors.quantity && <p className="text-sm text-destructive">{errors.quantity.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Costo Unitario</Label>
+          <Input type="number" step="0.01" {...register('unit_cost', { valueAsNumber: true })} />
+          {errors.unit_cost && <p className="text-sm text-destructive">{errors.unit_cost.message}</p>}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2"><Label>Lote</Label><Input {...register('batch_number')} /></div>
-        <div className="space-y-2"><Label>Fecha Vencimiento</Label><Input type="date" {...register('expiration_date')} /></div>
+        <div className="space-y-2">
+          <Label>Lote</Label>
+          <Input {...register('batch_number')} />
+          {errors.batch_number && <p className="text-sm text-destructive">{errors.batch_number.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label>Fecha Vencimiento</Label>
+          <Input type="date" {...register('expiration_date')} />
+          {errors.expiration_date && <p className="text-sm text-destructive">{errors.expiration_date.message}</p>}
+        </div>
       </div>
-      <div className="space-y-2"><Label>Proveedor</Label><Input {...register('supplier')} /></div>
+      <div className="space-y-2">
+        <Label>Proveedor</Label>
+        <Input {...register('supplier')} />
+        {errors.supplier && <p className="text-sm text-destructive">{errors.supplier.message}</p>}
+      </div>
       <Button type="submit" className="w-full">Agregar</Button>
     </form>
   )

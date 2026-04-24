@@ -28,9 +28,10 @@ Sistema de Información Hospitalaria (HIS) modular y escalable para clínicas y 
 - [x] Configuración Vite
 - [x] Estado global con TanStack Query
 - [x] Integración Supabase
-- [ ] Validación avanzada de formularios
-- [ ] Facturación con PDF, impuestos
-- [ ] Mejoras de UI/UX
+- [x] Validación avanzada de formularios (Zod + Error Messages)
+- [ ] Facturación con PDF
+- [x] Cálculo de impuestos (IGV 18%)
+- [x] Mejoras de UI/UX (Form handling)
 
 ### 📋 Phase 3 - Módulos Avanzados
 - [ ] Farmacia e Inventario
@@ -152,9 +153,9 @@ useDeletePatient()
 ## Tareas Pendientes
 
 ### Alta Prioridad
-1. Validación Zod en todos los formularios
+1. [x] Validación Zod en todos los formularios
 2. Generación PDF para facturas
-3. Cálculo de impuestos (IGV 18%)
+3. [x] Cálculo de impuestos (IGV 18%)
 4. Tests unitarios
 
 ### Media Prioridad
@@ -179,4 +180,4 @@ useDeletePatient()
 
 ---
 
-*Última actualización: 2026-04-17*
+*Última actualización: 2026-04-22*

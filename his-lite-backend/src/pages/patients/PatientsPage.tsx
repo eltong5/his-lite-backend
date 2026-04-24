@@ -195,6 +195,7 @@ const PatientForm = ({ onSubmit, defaultValues }: { onSubmit: (data: PatientForm
               <option value="PASSPORT">Pasaporte</option>
               <option value="CE">Carné Extranjería</option>
             </select>
+            {errors.document_type && <p className="text-sm text-destructive">{errors.document_type.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Número Documento</Label>
@@ -224,26 +225,32 @@ const PatientForm = ({ onSubmit, defaultValues }: { onSubmit: (data: PatientForm
               <option value="F">Femenino</option>
               <option value="OTHER">Otro</option>
             </select>
+            {errors.gender && <p className="text-sm text-destructive">{errors.gender.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Teléfono</Label>
             <Input {...register('phone')} />
+            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
             <Input type="email" {...register('email')} />
+            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
           <div className="space-y-2 col-span-2">
             <Label>Dirección</Label>
             <Input {...register('address')} />
+            {errors.address && <p className="text-sm text-destructive">{errors.address.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Contacto Emergencia</Label>
             <Input {...register('emergency_contact_name')} placeholder="Nombre" />
+            {errors.emergency_contact_name && <p className="text-sm text-destructive">{errors.emergency_contact_name.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Teléfono Emergencia</Label>
             <Input {...register('emergency_contact_phone')} />
+            {errors.emergency_contact_phone && <p className="text-sm text-destructive">{errors.emergency_contact_phone.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Tipo Sangre</Label>
@@ -258,14 +265,17 @@ const PatientForm = ({ onSubmit, defaultValues }: { onSubmit: (data: PatientForm
               <option value="O+">O+</option>
               <option value="O-">O-</option>
             </select>
+            {errors.blood_type && <p className="text-sm text-destructive">{errors.blood_type.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Seguro</Label>
             <Input {...register('insurance_provider')} placeholder="Nombre aseguradora" />
+            {errors.insurance_provider && <p className="text-sm text-destructive">{errors.insurance_provider.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Póliza Seguro</Label>
             <Input {...register('insurance_policy_number')} />
+            {errors.insurance_policy_number && <p className="text-sm text-destructive">{errors.insurance_policy_number.message}</p>}
           </div>
         </div>
         <div className="flex justify-end gap-2 pt-4">

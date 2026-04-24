@@ -13,7 +13,6 @@ import { BillingPage } from './pages/billing/BillingPage'
 import { InventoryPage } from './pages/inventory/InventoryPage'
 import { AuditLogsPage } from './pages/audit/AuditLogsPage'
 import { SettingsPage } from './pages/settings/SettingsPage'
-import { CRMDemoPage } from './pages/demo/CRMDemoPage'
 
 const AppRoutes = () => {
   return (
@@ -55,7 +54,7 @@ const AppRoutes = () => {
       <Route
         path="/medical-records"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'doctor']}>
+          <ProtectedRoute allowedRoles={['admin', 'doctor', 'patient']}>
             <MedicalRecordsPage />
           </ProtectedRoute>
         }
@@ -63,7 +62,7 @@ const AppRoutes = () => {
       <Route
         path="/billing"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'doctor']}>
+          <ProtectedRoute allowedRoles={['admin', 'doctor', 'patient']}>
             <BillingPage />
           </ProtectedRoute>
         }
@@ -92,13 +91,13 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-      <Route path="/crm" element={<CRMDemoPage />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
 }
 
 const App = () => {
+  console.log('🚩 [DEBUG] App component renderizado');
   return (
     <BrowserRouter>
       <AuthProvider>

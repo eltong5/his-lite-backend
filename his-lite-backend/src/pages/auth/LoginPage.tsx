@@ -29,6 +29,8 @@ export const LoginPage = () => {
 
   // Redirigir si ya está autenticado
   if (user) {
+    console.log('🚩 [DEBUG] Usuario ya autenticado, redirigiendo a:', from);
+    console.log('🚩 [DEBUG] Usuario data:', user);
     navigate(from, { replace: true })
     return null
   }

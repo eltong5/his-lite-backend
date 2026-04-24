@@ -1,0 +1,14 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+
+console.log('🚀 TEST: Iniciando aplicación mínima...')
+
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <h1>Hola Mundo - Debugging</h1>
+  )
+  console.log('✅ Renderizado mínimo completado')
+} else {
+  console.error('❌ No se encontró #root')
+}
